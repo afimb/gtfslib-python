@@ -179,6 +179,8 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
         last_stop = None
         for stoptime in trip.stop_times:
             # TODO Handle shapes if present
+            # TODO Interpolate missing departure/arrival times
+            # TODO Set first arrival / last departure time to NULL
             if last_stop is not None:
                 distance += dcache.orthodromic_distance(last_stop, stoptime.stop)
             last_stop = stoptime.stop
