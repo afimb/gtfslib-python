@@ -1,0 +1,6 @@
+.settings/
+.project
+.pydevproject
+**/*.pyc
+**/*.sqlite
+**/*.gtfs.zip
