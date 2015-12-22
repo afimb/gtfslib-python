@@ -3,10 +3,11 @@ An open source library in python for reading GTFS files and computing various st
 
 ## Quick howto
 
-Install virtualenv (optional):
+Setup a virtual environment (optional).
+(See https://virtualenv.readthedocs.org/ for more info.)
 
     $ virtualenv <ENV>
-    $ source <ENV>/bin/activate
+    $ . <ENV>/bin/activate
 
 Download and install the lib:
 
