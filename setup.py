@@ -8,8 +8,8 @@ from setuptools import setup, find_packages
 setup(
     name='gtfslib',
     version='0.1.0',
-    description="A sample Python project",
-    long_description="An open source library for reading, querying and manipulating GTFS-based transit data",
+    description="GTFS database library",
+    long_description="An open source library for reading, databasing, querying and manipulating GTFS-based transit data",
     url='https://github.com/afimb/gtfslib-python',
     author='AFIMB / CEREMA / MECATRAN',
     author_email='laurent.gregoire@mecatran.com',
