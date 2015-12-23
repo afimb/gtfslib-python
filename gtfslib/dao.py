@@ -95,10 +95,12 @@ class Dao(object):
         query = self._session.query(Stop)
         if fltr is not None:
             query = query.filter(fltr)
+        if trip_fltr is not None or calendar_fltr is not None:
+            query = query.join(StopTime).join(Trip)
         if trip_fltr is not None:
-            query = query.join(StopTime).join(Trip).filter(trip_fltr)
+            query = query.filter(trip_fltr)
         if calendar_fltr is not None:
-            query = query.join(StopTime).join(Trip).join(Calendar).join(CalendarDate).filter(calendar_fltr)
+            query = query.join(Calendar).join(CalendarDate).filter(calendar_fltr)
         if zone is not None:
             # TODO Use SQLAlchemy hybrid for this?
             query = query.filter((Stop.stop_lat >= zone.min_lat) & (Stop.stop_lat <= zone.max_lat) & (Stop.stop_lon >= zone.min_lon) & (Stop.stop_lon <= zone.max_lon))
@@ -190,12 +192,14 @@ class Dao(object):
         query = self._session.query(StopTime)
         if fltr is not None:
             query = query.filter(fltr)
+        if trip_fltr is not None or route_fltr is not None or calendar_fltr is not None:
+            query = query.join(Trip)
         if trip_fltr is not None:
-            query = query.join(Trip).filter(trip_fltr)
+            query = query.filter(trip_fltr)
         if route_fltr is not None:
-            query = query.join(Trip).join(Route).filter(route_fltr)
+            query = query.join(Route).filter(route_fltr)
         if calendar_fltr is not None:
-            query = query.join(Trip).join(Calendar).filter(calendar_fltr)
+            query = query.join(Calendar).filter(calendar_fltr)
         if prefetch_stop_times:
             prefetch_trips = True
         if prefetch_trips:
