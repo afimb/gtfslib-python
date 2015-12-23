@@ -31,7 +31,7 @@ Examples:
         using a default (empty) feed ID.
 
 Authors:
-  Patrick Gendre (CEREMA / AFIMB) <pat.gendre@cerema.fr>
+  CEREMA / AFIMB
   Laurent GRÉGOIRE (MECATRAN) <laurent.gregoire@mecatran.com>
 """
 from docopt import docopt
