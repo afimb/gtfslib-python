@@ -118,12 +118,14 @@ class Dao(object):
         query = self._session.query(Route)
         if fltr is not None:
             query = query.filter(fltr)
+        if trip_fltr is not None or calendar_fltr is not None or stoptime_fltr is not None:
+            query = query.join(Trip)
         if trip_fltr is not None:
-            query = query.join(Trip).filter(trip_fltr)
+            query = query.filter(trip_fltr)
         if calendar_fltr is not None:
-            query = query.join(Trip).join(Calendar).join(CalendarDate).filter(calendar_fltr)
+            query = query.join(Calendar).join(CalendarDate).filter(calendar_fltr)
         if stoptime_fltr is not None:
-            query = query.join(Trip).join(StopTime).filter(stoptime_fltr)
+            query = query.join(StopTime).filter(stoptime_fltr)
         if prefetch_trips:
             query = query.options(subqueryload('trips'))
         return query.all()
