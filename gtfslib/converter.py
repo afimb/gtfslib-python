@@ -174,7 +174,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
     dcache = DistanceCache()
     for trip in dao.trips(fltr=Trip.feed_id == feed_id, prefetch_stop_times=True, prefetch_stops=True, batch_size=10000):
         stopseq = 0
-        stopseq_rev = len(trip.stop_times)
+        n_stoptimes = len(trip.stop_times)
         distance = 0
         last_stop = None
         for stoptime in trip.stop_times:
@@ -185,10 +185,14 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
                 distance += dcache.orthodromic_distance(last_stop, stoptime.stop)
             last_stop = stoptime.stop
             stoptime.stop_sequence = stopseq
-            stoptime.rev_stop_sequence = stopseq_rev
             stoptime.shape_dist_traveled = distance
+            if stopseq == 0:
+                # Force first arrival time to NULL
+                stoptime.arrival_time = None
+            if stopseq == n_stoptimes - 1:
+                # Force last departure time to NULL
+                stoptime.departure_time = None
             stopseq += 1
-            stopseq_rev -= 1
         ntrips += 1
         if ntrips % 1000 == 0:
             logger.info("%d trips" % ntrips)
