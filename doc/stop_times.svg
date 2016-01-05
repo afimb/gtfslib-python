@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="406.48773"
+   height="117.94183"
+   id="svg3389"
+   version="1.1"
+   inkscape:version="0.48.5 r10040"
+   sodipodi:docname="stop_times.svg"
+   inkscape:export-filename="/home/laurent/workspace/gtfslib-python/doc/stop_times.png"
+   inkscape:export-xdpi="100"
+   inkscape:export-ydpi="100">
+  <defs
+     id="defs3391">
+    <marker
+       inkscape:stockid="Arrow1Mstart"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mstart"
+       style="overflow:visible">
+      <path
+         id="path6216"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(0.4,0,0,0.4,4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend"
+       style="overflow:visible">
+      <path
+         id="path9792"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-9"
+       style="overflow:visible">
+      <path
+         id="path9792-6"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-0"
+       style="overflow:visible">
+      <path
+         id="path9792-8"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-8"
+       style="overflow:visible">
+      <path
+         id="path9792-2"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-89"
+       style="overflow:visible">
+      <path
+         id="path9792-62"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-4"
+       style="overflow:visible">
+      <path
+         id="path9792-9"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="marker6076"
+       style="overflow:visible">
+      <path
+         id="path6078"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="marker6080"
+       style="overflow:visible">
+      <path
+         id="path6082"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.979899"
+     inkscape:cx="267.06197"
+     inkscape:cy="24.168617"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1366"
+     inkscape:window-height="721"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0" />
+  <metadata
+     id="metadata3394">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-58.916063,-299.34941)">
+    <g
+       transform="translate(230.67018,-60.794825)"
+       id="g3537-9">
+      <rect
+         style="fill:#ffa67e;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         id="rect3769-3-3"
+         width="159.99513"
+         height="93.983643"
+         x="73.73848"
+         y="383.10242"
+         ry="12.857115" />
+    </g>
+    <g
+       transform="translate(15.472006,-58.565306)"
+       id="g3537">
+      <rect
+         style="fill:#ffe260;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         id="rect3769-3"
+         width="166.56113"
+         height="91.458244"
+         x="44.444057"
+         y="382.59735"
+         ry="12.857115" />
+    </g>
+    <path
+       style="fill:#b2b2b2;fill-opacity:1;stroke:none"
+       d="m 233.76228,367.39254 0,16.65463 35.66445,0 0,17.32753 25.90717,-25.90719 -25.90717,-25.90719 0,17.664 z"
+       id="path4475"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cccccccc" />
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-weight:normal;text-align:start;line-height:100%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="112.12813"
+       y="310.09906"
+       id="text3761-0-7-0"
+       sodipodi:linespacing="100%"><tspan
+         sodipodi:role="line"
+         x="112.12813"
+         y="310.09906"
+         style="font-size:14px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;fill:#808080;fill-opacity:1;font-family:Raleway;-inkscape-font-specification:Raleway"
+         id="tspan3450-23">GTFS</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-weight:normal;text-align:start;line-height:100%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="363.46283"
+       y="309.47141"
+       id="text3761-0-7-0-5"
+       sodipodi:linespacing="100%"
+       inkscape:transform-center-x="-72.730983"
+       inkscape:transform-center-y="127.27922"><tspan
+         sodipodi:role="line"
+         x="363.46283"
+         y="309.47141"
+         style="font-size:14px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;fill:#808080;fill-opacity:1;font-family:Raleway;-inkscape-font-specification:Raleway"
+         id="tspan3450-23-8">GTFS'</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-weight:normal;text-align:start;line-height:100%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="76.525627"
+       y="348.39844"
+       id="text3761-0-7"
+       sodipodi:linespacing="100%"><tspan
+         sodipodi:role="line"
+         x="76.525627"
+         y="348.39844"
+         style="font-size:12px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
+         id="tspan4560-7">Trip T1</tspan><tspan
+         sodipodi:role="line"
+         x="76.525627"
+         y="360.39844"
+         style="font-size:10px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
+         id="tspan3450" /><tspan
+         sodipodi:role="line"
+         x="76.525627"
+         y="369.8486"
+         style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Courier;-inkscape-font-specification:Courier Bold"
+         id="tspan5308">Stop  Dep   Arr   Seq</tspan><tspan
+         sodipodi:role="line"
+         x="76.525627"
+         y="379.8486"
+         style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Courier;-inkscape-font-specification:Courier Bold"
+         id="tspan3097">A     8:00  8:00    2</tspan><tspan
+         sodipodi:role="line"
+         x="76.525627"
+         y="389.8486"
+         style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Courier;-inkscape-font-specification:Courier Bold"
+         id="tspan5016">B     -:--  -:--    8</tspan><tspan
+         sodipodi:role="line"
+         x="76.525627"
+         y="399.8486"
+         style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Courier;-inkscape-font-specification:Courier Bold"
+         id="tspan5018">C     9:00  9:00   12</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-weight:normal;text-align:start;line-height:100%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="323.29102"
+       y="347.43158"
+       id="text3761-0-7-2"
+       sodipodi:linespacing="100%"><tspan
+         sodipodi:role="line"
+         x="323.29102"
+         y="347.43158"
+         style="font-size:12px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
+         id="tspan4560-7-3">Trip T1</tspan><tspan
+         sodipodi:role="line"
+         x="323.29102"
+         y="359.43158"
+         style="font-size:10px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
+         id="tspan3450-65" /><tspan
+         sodipodi:role="line"
+         x="323.29102"
+         y="368.88174"
+         style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Courier;-inkscape-font-specification:Courier Bold"
+         id="tspan5402">Stop  Arr   Dep  Seq</tspan><tspan
+         sodipodi:role="line"
+         x="323.29102"
+         y="378.88174"
+         style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Courier;-inkscape-font-specification:Courier Bold"
+         id="tspan5308-8">A     NULL  8:00   0</tspan><tspan
+         sodipodi:role="line"
+         x="323.29102"
+         y="388.88174"
+         style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Courier;-inkscape-font-specification:Courier Bold"
+         id="tspan5016-8">B     8:23  8:23   1</tspan><tspan
+         sodipodi:role="line"
+         x="323.29102"
+         y="398.88174"
+         style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Courier;-inkscape-font-specification:Courier Bold"
+         id="tspan5018-5">C     9:00  NULL   2</tspan></text>
+  </g>
+</svg>
