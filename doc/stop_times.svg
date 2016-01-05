@@ -177,7 +177,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -310,7 +310,7 @@
          x="323.29102"
          y="388.88174"
          style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Courier;-inkscape-font-specification:Courier Bold"
-         id="tspan5016-8">B     8:23  8:23   1</tspan><tspan
+         id="tspan5016-8">B    (8:23)(8:23)  1</tspan><tspan
          sodipodi:role="line"
          x="323.29102"
          y="398.88174"
