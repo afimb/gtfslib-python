@@ -24,57 +24,29 @@ Download and install the lib:
 
 ### API tutorial
 
-Import and create a DAO object, giving an optional database to operate on. If no database is provided, the data will be loaded to memory (so will not be saved to disk of course).
+```python
+from gtfslib.dao import Dao
+dao = Dao("db.sqlite")
+dao.load_gtfs("mygtfs.zip")
+for stop in dao.stops():
+	print(stop.stop_name)
+for route in dao.routes(fltr=Route.route_type == Route.TYPE_BUS):
+	print("%s: %d trips" % (route.long_name, len(route.trips)))
+```
 
-	from gtfslib.dao import Dao
-	dao = Dao("db.sqlite")
+For more information [see here](https://github.com/afimb/gtfslib-python/wiki/API-usage-tutorial).
 
-If a simple filename is given, SQLite is assumed. In order to use other databases (PostgreSQL), use something like:
+## Data model
 
-	dao = Dao("postgresql://gtfs@localhost/gtfs")
+The internal model used, GTFS', is close to GTFS but simplified / normalized / expanded for ease of use.
 
-To load a GTFS into the database, normalizing it (conversion of calendars, trips, stop times, frequencies...):
+The main differences are:
 
-	dao.load_gtfs("mygtfs.zip")
+* A calendar is a simple list of calendar dates (there is no date range, day of the week and positive/negative exceptions anymore).
+* All optional fields with a default value are set (for example, pickup/dropoff types)
+* Missing stop times are correctly interpolated, and marked with a flag.
+* Shape distances are converted to meters and computed if missing.
+* All frequencies are expanded to normal trips, and marked with a flag (TODO).
+* ...
 
-In order to load multiple GTFS at the same time, you need to provide a unique ID (here 'sncf'):
-
-	dao.load_gtfs("sncf.gtfs.zip", feed_id="sncf")
-
-To delete an entire feed and all attached objects (safe to use if the feed does not exists), or to reload again on top of previous data:
-
-	dao.delete_feed("sncf")
-
-You can now access objects to work on, for example a single object via it's ID (here route ID 'R1' from the default feed):
-
-	route = dao.route('R1')
-	print(route)
-
-Or a list of all objects (here a list of all stops of all feeds):
-
-	for stop in dao.stops():
-		print(stop.stop_name)
-
-Or a filter of all objects corresponding to some criteria, for example
-
-	gares = dao.stops(fltr=Stop.stop_name.ilike("%gare%"))
-
-Linked objects are "transparently" accessible via fields (for example: `route.trips`).
-If they are not pre-loaded during the initial query, they will be lazily loaded at the time of first-access.
-
-	for route in dao.routes(fltr=Route.route_type == Route.TYPE_BUS):
-		# The following will issue a SELECT per route:
-		print(len(route.trips))
-
-You can say which data to pre-fetch. The same query, here pre-fetching route trips (a total of TWO selects only):
-
-	for route in dao.routes(..., prefetch_trips=True):
-		# Trips are pre-loaded
-		print(len(route.trips))
-
-For processing a large quantity of data, you can batch them (available only for stops, trips and stoptimes). The following will transparently issue a new SELECT every 1000 trips:
-
-	for trip in dao.trips(batch_size=1000):
-		... do something with trip ...
-
-TODO: complex queries, SQL print
+For the detail and more information [see here](https://github.com/afimb/gtfslib-python/wiki/Internal-model).
