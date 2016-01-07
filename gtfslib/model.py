@@ -3,9 +3,9 @@
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
 
-from __builtin__ import str, int, float, bool
 import datetime
 from functools import total_ordering
+
 
 class FeedInfo(object):
     
