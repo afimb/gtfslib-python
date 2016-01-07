@@ -119,7 +119,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
                 dates2.remove(date2)
     n_calendars = 0
     n_caldates = 0
-    for (calendar2, dates2) in calanddates2.itervalues():
+    for (calendar2, dates2) in calanddates2.values():
         calendar2.dates = [ d for d in dates2 ]
         dao.add(calendar2)
         n_calendars += 1
