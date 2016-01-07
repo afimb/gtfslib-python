@@ -130,6 +130,10 @@ class CalendarDate(object):
             return other.date
         raise ValueError("Can't coerce %s to a CalendarDate (use either a CalendarDate, a 'yyyy-mm-dd' string or a datetime.date)" % other)
     
+    def as_date(self):
+        # Note: add a getter if internal representation change some day
+        return self.date
+
     def __lt__(self, other):
         return self.date < self._coerce(other)
 
