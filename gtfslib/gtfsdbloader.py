@@ -42,7 +42,7 @@ import sys
 from gtfslib.dao import Dao
 
 
-if __name__ == '__main__':
+def main():
     arguments = docopt(__doc__, version='gtfsdbloader 0.1')
     if arguments['--id'] is None:
         arguments['--id'] = ""
@@ -68,3 +68,6 @@ if __name__ == '__main__':
 
     if arguments['--load']:
         dao.load_gtfs(arguments['--load'], feed_id=arguments['--id'])
+
+if __name__ == '__main__':
+    main()
