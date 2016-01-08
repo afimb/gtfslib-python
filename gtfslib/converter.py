@@ -190,6 +190,8 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
         n_stoptimes = len(trip.stop_times)
         distance = 0
         last_stop = None
+        last_stoptime_with_time = None
+        to_interpolate = []
         for stoptime in trip.stop_times:
             # TODO Handle shapes if present
             # TODO Interpolate missing departure/arrival times
@@ -204,7 +206,41 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
             if stopseq == n_stoptimes - 1:
                 # Force last departure time to NULL
                 stoptime.departure_time = None
+            if stoptime.interpolated:
+                to_interpolate.append(stoptime)
+            else:
+                if len(to_interpolate) > 0:
+                    # Interpolate
+                    if last_stoptime_with_time is None:
+                        logger.error("Cannot interpolate missing time at trip start: %s" % trip)
+                        for stti in to_interpolate:
+                            # Use first defined time as fallback value.
+                            stti.arrival_time = stoptime.arrival_time
+                            stti.departure_time = stoptime.arrival_time
+                    else:
+                        tdist = stoptime.shape_dist_traveled - last_stoptime_with_time.shape_dist_traveled
+                        ttime = stoptime.arrival_time - last_stoptime_with_time.departure_time
+                        for stti in to_interpolate:
+                            fdist = stti.shape_dist_traveled - last_stoptime_with_time.shape_dist_traveled
+                            t = last_stoptime_with_time.departure_time + ttime * fdist // tdist
+                            stti.arrival_time = t
+                            stti.departure_time = t
+                to_interpolate = []
+                last_stoptime_with_time = stoptime
             stopseq += 1
+
+        if len(to_interpolate) > 0:
+            # Should not happen, but handle the case, we never know
+            if last_stoptime_with_time is None:
+                logger.error("Cannot interpolate missing time, no time at all: %s" % trip)
+                # Keep times NULL (TODO: or remove the trip?)
+            else:
+                logger.error("Cannot interpolate missing time at trip end: %s" % trip)
+                for stti in to_interpolate:
+                    # Use last defined time as fallback value
+                    stti.arrival_time = last_stoptime_with_time.departure_time
+                    stti.departure_time = last_stoptime_with_time.departure_time
+
         ntrips += 1
         if ntrips % 1000 == 0:
             logger.info("%d trips" % ntrips)
