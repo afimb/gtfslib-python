@@ -4,4 +4,4 @@
 gtfslib.egg-info/
 **/*.pyc
 **/*.sqlite
-**/*.gtfs.zip
+/*.gtfs.zip
