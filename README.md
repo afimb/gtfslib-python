@@ -1,5 +1,5 @@
 # gtfslib-python
-An open source library in python for reading GTFS files and computing various stats and indicators about Public Transport networks
+An open source (GPLv3) library in python for reading GTFS files and computing various stats and indicators about Public Transport networks
 
 [![Build Status](https://travis-ci.org/afimb/gtfslib-python.svg)](https://travis-ci.org/afimb/gtfslib-python)
 

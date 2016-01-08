@@ -3,17 +3,18 @@
 """
 
 from setuptools import setup, find_packages
+import gtfslib
 
 
 setup(
     name='gtfslib',
-    version='0.1.0',
+    version=gtfslib.__version__,
     description="GTFS database library",
     long_description="An open source library for reading, databasing, querying and manipulating GTFS-based transit data",
     url='https://github.com/afimb/gtfslib-python',
     author='AFIMB / CEREMA / MECATRAN',
     author_email='laurent.gregoire@mecatran.com',
-    license='TODO',
+    license='GPLv3',
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
@@ -22,7 +23,7 @@ setup(
         'Operating System :: OS Independent',
         'Intended Audience :: Developers',
         'Topic :: Scientific/Engineering :: GIS',
-        # 'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3'
     ],
