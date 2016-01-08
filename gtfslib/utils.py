@@ -12,7 +12,7 @@ def timing(f):
         time1 = time.time()
         ret = f(*args)
         time2 = time.time()
-        logging.info("%s() took %0.3f sec" % (f.func_name, time2 - time1))
+        logging.info("%s() took %0.3f sec" % (f.__name__, time2 - time1))
         return ret
     return wrap
 
