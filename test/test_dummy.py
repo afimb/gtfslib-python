@@ -140,10 +140,13 @@ class TestDummyGtfs(unittest.TestCase):
             n += 1
         self.assertTrue(n > 30)
 
-        # Check normalization
+        # Check normalization and interpolation
+        n = 0
         for trip in dao.trips(prefetch_stop_times=True):
             stopseq = 0
             n_stoptimes = len(trip.stop_times)
+            last_stoptime = None
+            last_interpolated_speed = None
             for stoptime in trip.stop_times:
                 self.assertTrue(stoptime.stop_sequence == stopseq)
                 if stopseq == 0:
@@ -155,6 +158,18 @@ class TestDummyGtfs(unittest.TestCase):
                 else:
                     self.assertTrue(stoptime.departure_time is not None)
                 stopseq += 1
+                if stoptime.interpolated or (last_stoptime is not None and last_stoptime.interpolated):
+                    dist = stoptime.shape_dist_traveled - last_stoptime.shape_dist_traveled
+                    time = stoptime.arrival_time - last_stoptime.departure_time
+                    speed = dist * 1.0 / time
+                    if last_interpolated_speed is not None:
+                        self.assertAlmostEqual(speed, last_interpolated_speed, 2)
+                    last_interpolated_speed = speed
+                    n += 1
+                if not stoptime.interpolated:
+                    last_interpolated_speed = None
+                last_stoptime = stoptime
+        self.assertTrue(n >= 10)
 
     def test_non_overlapping_feeds(self):
         dao = Dao(DAO_URL, sql_logging=SQL_LOG)
