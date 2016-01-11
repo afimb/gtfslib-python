@@ -60,9 +60,14 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
 
     logger.info("Importing agencies...")
     n_agencies = 0
+    single_agency = None
     for agency in gtfs.agencies():
         agency2 = Agency(feed_id, **vars(agency))
         dao.add(agency2)
+        if n_agencies == 0:
+            single_agency = agency2
+        else:
+            single_agency = None
         n_agencies += 1
     dao.flush()
     logger.info("Imported %d agencies" % n_agencies)
@@ -96,6 +101,9 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
         rval = vars(route)
         rval['route_type'] = int(route.route_type)
         route2 = Route(feed_id, **rval)
+        if route2.agency is None and single_agency is not None:
+            # Route.agency is optional if only a single agency exists.
+            route2.agency = single_agency
         dao.add(route2)
         n_routes += 1
     dao.flush()
