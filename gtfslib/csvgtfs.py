@@ -80,6 +80,8 @@ def python2or3_csv(filesource, filename, encoding, dialect=csv.excel, **kwargs):
         filedata = io.TextIOWrapper(filesource.open(filename, 'r'), encoding=encoding)
     csvreader = csv.reader(filedata, dialect=dialect, **kwargs)
     for row in csvreader:
+        if len(row) == 0:
+            continue
         if six.PY2:
             yield [ unicode(cell, encoding) for cell in row ]
         else:
