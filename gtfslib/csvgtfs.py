@@ -45,34 +45,6 @@ class CsvTableFactory(object):
     def next(self):
         return self.__next__()
 
-class Python2or3Csv(object):
-    
-    def __init__(self, filesource, filename, encoding, dialect=csv.excel, **kwargs):
-        if six.PY2:
-            filedata = filesource.open(filename, 'rU')
-        else:
-            filedata = io.TextIOWrapper(filesource.open(filename, 'r'), encoding=encoding)
-        self._csvreader = csv.reader(filedata, dialect=dialect, **kwargs)
-        self._encoding = encoding
-    
-    def __iter__(self):
-        return self
-    
-    def _convert(self, cell):
-        cell = cell.strip()
-        # Empty cell returns None
-        if not cell:
-            return None
-        return cell
-    
-    def next(self):
-        row = six.next(self._csvreader)
-        return [ unicode(cell, self._encoding) for cell in row ]
-
-    def __next__(self):
-        row = six.next(self._csvreader)
-        return [ cell for cell in row ]
-
 def python2or3_csv(filesource, filename, encoding, dialect=csv.excel, **kwargs):
     if six.PY2:
         filedata = filesource.open(filename, 'rU')
@@ -124,7 +96,6 @@ class Gtfs(object):
 
     def make_getter(self, name, filename):
         def getter(self):
-            # myreader = Python2or3Csv(self._filesource, filename, 'utf-8')
             myreader = python2or3_csv(self._filesource, filename, 'utf-8')
             mytable = CsvTableFactory(name, myreader)
             return mytable
