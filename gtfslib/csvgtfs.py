@@ -72,14 +72,14 @@ class ZipFileSource(object):
 
 class Gtfs(object):
     TABLES = [
-            dict(obj='FeedInfo', getter='feedinfo', table='feed_info.txt'),
+            dict(obj='FeedInfo', getter='feedinfo', table='feed_info.txt', optional=True),
             dict(obj='Agency', getter='agencies', table='agency.txt'),
             dict(obj='Stop', getter='stops', table='stops.txt'),
             dict(obj='Route', getter='routes', table='routes.txt'),
             dict(obj='Trip', getter='trips', table='trips.txt'),
             dict(obj='StopTime', getter='stop_times', table='stop_times.txt'),
             dict(obj='Calendar', getter='calendars', table='calendar.txt'),
-            dict(obj='CalendarDate', getter='calendar_dates', table='calendar_dates.txt'),
+            dict(obj='CalendarDate', getter='calendar_dates', table='calendar_dates.txt', optional=True),
             dict(obj='Transfer', getter='transfers', table='transfers.txt')
     ]
     
@@ -88,17 +88,24 @@ class Gtfs(object):
         
     def load(self):
         for tbl in Gtfs.TABLES:
-            setattr(Gtfs, tbl['getter'], self.make_getter(tbl['obj'], tbl['table']))
+            setattr(Gtfs, tbl['getter'], self.make_getter(tbl['obj'], tbl['table'], optional=tbl.get('optional')))
         return self
 
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self._filesource)
 
-    def make_getter(self, name, filename):
+    def make_getter(self, name, filename, optional=False):
         def getter(self):
-            myreader = python2or3_csv(self._filesource, filename, 'utf-8')
-            mytable = CsvTableFactory(name, myreader)
-            return mytable
+            try:
+                myreader = python2or3_csv(self._filesource, filename, 'utf-8')
+                mytable = CsvTableFactory(name, myreader)
+                return mytable
+            except KeyError:
+                # If table is optional, return empty iterator
+                if optional:
+                    return iter(())
+                else:
+                    raise KeyError("Required table '%s' not found in GTFS." % filename)
         return getter
     
     def __enter__(self):
