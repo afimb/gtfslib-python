@@ -13,6 +13,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
+import six
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -255,7 +256,7 @@ class StopTime(object):
 def _public_vars(obj):
     # By default only include primitive types
     # Otherwise there will be too much data (think "route.trips"...)
-    PRIMITIVE_TYPES = (str, unicode, int, float, bool)
+    PRIMITIVE_TYPES = (str, unicode, int, float, bool) if six.PY2 else (str, int, float, bool)
     return { k: v for k, v in vars(obj).items() if k[0] != '_' and isinstance(v, PRIMITIVE_TYPES) }
 
 def _generic_hash(ids):
