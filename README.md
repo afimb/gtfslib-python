@@ -51,4 +51,4 @@ The main differences are:
 * All frequencies are expanded to normal trips, and marked with a flag (TODO).
 * ...
 
-For the detail and more information [see here](https://github.com/afimb/gtfslib-python/wiki/Internal-model).
+For the detail and more information [see here](https://github.com/afimb/gtfslib-python/wiki/Internal-model---GTFS').
