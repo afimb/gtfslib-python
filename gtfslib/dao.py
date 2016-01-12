@@ -167,11 +167,14 @@ class Dao(object):
             query = query.options(subqueryload('trips'))
         return query.all()
     
-    def calendar_dates(self, fltr=None):
-        # TODO complete this
+    def calendar_dates(self, fltr=None, prefetch_calendars=True, prefetch_trips=False):
         query = self._session.query(CalendarDate)
         if fltr is not None:
             query = query.filter(fltr)
+        if prefetch_calendars:
+            query = query.options(subqueryload('calendar'))
+        if prefetch_trips:
+            query = query.options(subqueryload('calendar.trips'))
         return query.all()
 
     def trip(self, trip_id, feed_id="", prefetch_stop_times=True):
