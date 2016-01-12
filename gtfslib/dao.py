@@ -13,6 +13,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
+from sqlalchemy.orm.util import aliased
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -48,6 +49,8 @@ class Dao(object):
         _Orm(engine)
         Session = sessionmaker(bind=engine)
         self._session = Session()
+        self._stoptime1=aliased(StopTime, name="first_stop_time")
+        self._stoptime2=aliased(StopTime, name="second_stop_time")
 
     def session(self):
         return self._session
@@ -228,6 +231,33 @@ class Dao(object):
             query = query.options(loadopt)
         query = query.order_by(StopTime.feed_id, StopTime.trip_id, StopTime.stop_sequence)
         return self._page_query(query, batch_size)
+
+    def hopFirst(self):
+        return self._stoptime1
+
+    def hopSecond(self):
+        return self._stoptime2
+
+    def hops(self, fltr=None, trip_fltr=None, route_fltr=None, calendar_fltr=None, prefetch_trips=True, prefetch_stop_times=False):
+        query = self._session.query(self._stoptime1, self._stoptime2).filter((self._stoptime1.trip_id == self._stoptime2.trip_id) & ((self._stoptime1.stop_sequence + 1) == self._stoptime2.stop_sequence))
+        if fltr is not None:
+            query = query.filter(fltr)
+        if trip_fltr is not None or route_fltr is not None or calendar_fltr is not None:
+            query = query.join(Trip)
+        if trip_fltr is not None:
+            query = query.filter(trip_fltr)
+        if route_fltr is not None:
+            query = query.join(Route).filter(route_fltr)
+        if calendar_fltr is not None:
+            query = query.join(Calendar).filter(calendar_fltr)
+        if prefetch_stop_times:
+            prefetch_trips = True
+        if prefetch_trips:
+            loadopt = subqueryload('trip')
+            if prefetch_stop_times:
+                loadopt = loadopt.subqueryload('stop_times')
+            query = query.options(loadopt)
+        return query.all()
 
     """
     Note: If you use _page_query, please make sure you add an order_by on the query!
