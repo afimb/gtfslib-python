@@ -282,5 +282,28 @@ class TestDummyGtfs(unittest.TestCase):
             self.assertTrue(date <= to_date.as_date())
             self.assertTrue(trip_count > 0)
 
+    def test_hops(self):
+        dao = Dao(DAO_URL, sql_logging=SQL_LOG)
+        dao.load_gtfs(DUMMY_GTFS)
+
+        # Get all hops
+        hops = dao.hops()
+        nhops = 0
+        for st1, st2 in hops:
+            self.assertTrue(st1.stop_sequence + 1 == st2.stop_sequence)
+            self.assertTrue(st1.trip == st2.trip)
+            nhops += 1
+
+        # Get hops with a delta of 2
+        hops = dao.hops(delta=2)
+        nhops2 = 0
+        for st1, st2 in hops:
+            self.assertTrue(st1.stop_sequence + 2 == st2.stop_sequence)
+            self.assertTrue(st1.trip == st2.trip)
+            nhops2 += 1
+        ntrips = len(dao.trips())
+        # Assume all trips have len > 2
+        self.assertTrue(nhops == nhops2 + ntrips)
+
 if __name__ == '__main__':
     unittest.main()
