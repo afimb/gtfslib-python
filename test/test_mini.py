@@ -82,12 +82,19 @@ class TestMiniGtfs(unittest.TestCase):
             nhops2 += 1
         self.assertTrue(nhops == nhops1 + nhops2)
 
+        # Get all hops with a time +/- 1h
         hops = dao.hops(fltr=(dao.hopSecond().arrival_time - dao.hopFirst().departure_time >= 3600))
         for st1, st2 in hops:
             self.assertTrue(st2.arrival_time - st1.departure_time >= 3600)
         hops = dao.hops(fltr=(dao.hopSecond().arrival_time - dao.hopFirst().departure_time < 3600))
         for st1, st2 in hops:
             self.assertTrue(st2.arrival_time - st1.departure_time < 3600)
+
+        # Get hops with a delta of 2
+        hops = dao.hops(delta=2)
+        for st1, st2 in hops:
+            self.assertTrue(st1.stop_sequence + 2 == st2.stop_sequence)
+            self.assertTrue(st1.trip == st2.trip)
 
 if __name__ == '__main__':
     unittest.main()
