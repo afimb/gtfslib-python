@@ -238,8 +238,8 @@ class Dao(object):
     def hopSecond(self):
         return self._stoptime2
 
-    def hops(self, fltr=None, trip_fltr=None, route_fltr=None, calendar_fltr=None, prefetch_trips=True, prefetch_stop_times=False):
-        query = self._session.query(self._stoptime1, self._stoptime2).filter((self._stoptime1.trip_id == self._stoptime2.trip_id) & ((self._stoptime1.stop_sequence + 1) == self._stoptime2.stop_sequence))
+    def hops(self, delta=1, fltr=None, trip_fltr=None, route_fltr=None, calendar_fltr=None, prefetch_trips=True, prefetch_stop_times=False):
+        query = self._session.query(self._stoptime1, self._stoptime2).filter((self._stoptime1.trip_id == self._stoptime2.trip_id) & ((self._stoptime1.stop_sequence + delta) == self._stoptime2.stop_sequence))
         if fltr is not None:
             query = query.filter(fltr)
         if trip_fltr is not None or route_fltr is not None or calendar_fltr is not None:
