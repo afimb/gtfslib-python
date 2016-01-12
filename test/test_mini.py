@@ -50,5 +50,44 @@ class TestMiniGtfs(unittest.TestCase):
         self.assertTrue(a.agency_name == "Mini Agency")
         self.assertTrue(len(a.routes) == 1)
 
+    def test_hops(self):
+        dao = Dao(DAO_URL, sql_logging=SQL_LOG)
+        dao.load_gtfs(MINI_GTFS)
+
+        # Get all hops
+        hops = dao.hops()
+        nhops = 0
+        for st1, st2 in hops:
+            self.assertTrue(st1.stop_sequence + 1 == st2.stop_sequence)
+            self.assertTrue(st1.trip == st2.trip)
+            nhops += 1
+        self.assertTrue(nhops == 8)
+
+        # Get all hops with a distance <= 70km
+        hops = dao.hops(fltr=(dao.hopSecond().shape_dist_traveled - dao.hopFirst().shape_dist_traveled <= 70000))
+        nhops1 = 0
+        for st1, st2 in hops:
+            self.assertTrue(st1.stop_sequence + 1 == st2.stop_sequence)
+            self.assertTrue(st1.trip == st2.trip)
+            self.assertTrue(st2.shape_dist_traveled - st1.shape_dist_traveled <= 70000)
+            nhops1 += 1
+
+        # Get all hops with a distance > 70km
+        hops = dao.hops(fltr=(dao.hopSecond().shape_dist_traveled - dao.hopFirst().shape_dist_traveled > 70000))
+        nhops2 = 0
+        for st1, st2 in hops:
+            self.assertTrue(st1.stop_sequence + 1 == st2.stop_sequence)
+            self.assertTrue(st1.trip == st2.trip)
+            self.assertTrue(st2.shape_dist_traveled - st1.shape_dist_traveled > 70000)
+            nhops2 += 1
+        self.assertTrue(nhops == nhops1 + nhops2)
+
+        hops = dao.hops(fltr=(dao.hopSecond().arrival_time - dao.hopFirst().departure_time >= 3600))
+        for st1, st2 in hops:
+            self.assertTrue(st2.arrival_time - st1.departure_time >= 3600)
+        hops = dao.hops(fltr=(dao.hopSecond().arrival_time - dao.hopFirst().departure_time < 3600))
+        for st1, st2 in hops:
+            self.assertTrue(st2.arrival_time - st1.departure_time < 3600)
+
 if __name__ == '__main__':
     unittest.main()
