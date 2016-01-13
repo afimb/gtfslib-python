@@ -1,5 +1,5 @@
 """
-@author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
+@author: Laurent GREGOIRE <laurent.gregoire@mecatran.com>
 """
 
 from setuptools import setup, find_packages
