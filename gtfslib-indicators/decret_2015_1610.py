@@ -112,7 +112,9 @@ if __name__ == '__main__':
     #dao.load_gtfs("gtfs.zip")
 
     print("Chargement des données...")
+    # Load only one route
     # trips = dao.trips(fltr=(Trip.route_id == 'A1'), prefetch_stop_times=True, prefetch_calendars=True)
-    trips = dao.trips(fltr=(Trip.route_id == 'A1'), prefetch_stop_times=True, prefetch_calendars=True)
+    # Load all trips
+    trips = dao.trips(prefetch_stop_times=True, prefetch_calendars=True)
     urbain = decret_2015_1610(trips)
     print("urbain=%s" % urbain)
