@@ -197,7 +197,11 @@ class Trip(object):
         self.exact_times = exact_times
         for key in kwargs:
             setattr(self, key, kwargs[key])
-        
+
+    def hops(self):
+        # Python rocks for this kind of stuff
+        return zip(self.stop_times[0:], self.stop_times[1:])
+
     def __repr__(self):
         return "<%s(id=%s/%s, %s)>" % (
                 self.__class__.__name__, self.feed_id, self.trip_id, _public_vars(self))
