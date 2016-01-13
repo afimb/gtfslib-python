@@ -142,12 +142,17 @@ class TestDao(unittest.TestCase):
 
         trip = dao.trip("T2", feed_id="F1")
         self.assertTrue(len(trip.stop_times) == 2)
-        
+
         for trip in dao.trips(prefetch_stop_times=True):
             last_stop_seq = -1
             for stoptime in trip.stop_times:
                 self.assertTrue(stoptime.stop_sequence > last_stop_seq)
                 last_stop_seq = stoptime.stop_sequence
+
+        for trip in dao.trips():
+            for stoptime1, stoptime2 in trip.hops():
+                self.assertTrue(stoptime1.trip == stoptime2.trip)
+                self.assertTrue(stoptime1.stop_sequence + 1 == stoptime2.stop_sequence)
 
 if __name__ == '__main__':
     unittest.main()
