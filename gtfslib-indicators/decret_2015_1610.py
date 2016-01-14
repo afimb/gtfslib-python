@@ -95,7 +95,10 @@ def decret_2015_1610(trips):
             minute_min = minute
     print("La fréquence minimale est de %.2f voyages/heure, entre %s et %s." % (frequence_min / 60.0, fmttime(minute_min * 60), fmttime((minute_min + 60) * 60)))
     print("La fréquence maximale est de %.2f voyages/heure, entre %s et %s." % (frequence_max / 60.0, fmttime(minute_max * 60), fmttime((minute_max + 60) * 60)))
-    ratio_frequence = frequence_max / float(frequence_min)
+    if frequence_min == 0:
+        ratio_frequence = float('inf')
+    else:
+        ratio_frequence = frequence_max / float(frequence_min)
     print("Le ratio entre fréquence max et min est de %.3f (max 2.5)." % ratio_frequence)
 
     urbain = ratio_frequence < 2.5 and espacement_moyen < 500
