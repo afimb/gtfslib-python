@@ -72,26 +72,27 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
     dao.flush()
     logger.info("Imported %d agencies" % n_agencies)
 
-    def import_stop(stop):
+    def import_stop(stop, stoptype):
         sval = vars(stop)
+        sval['location_type'] = _toint(sval.get('location_type'), Stop.TYPE_STOP)
+        if sval['location_type'] != stoptype:
+            return
         sval['wheelchair_boarding'] = _toint(sval.get('wheelchair_boarding'), Stop.WHEELCHAIR_UNKNOWN)
         # This field has been renamed for consistency
         parent_id = sval.get('parent_station')
         sval['parent_station_id'] = parent_id if parent_id else None
-        del sval['parent_station']
+        sval.pop('parent_station', None)
         stop2 = Stop(feed_id, **sval)
         dao.add(stop2)
     
     logger.info("Importing stations and stops...")
     n_stations = n_stops = 0
     for station in gtfs.stops():
-        if int(station.location_type) == Stop.TYPE_STATION:
-            import_stop(station)
-            n_stations += 1
+        import_stop(station, Stop.TYPE_STATION)
+        n_stations += 1
     for stop in gtfs.stops():
-        if int(stop.location_type) == Stop.TYPE_STOP:
-            import_stop(stop)
-            n_stops += 1
+        import_stop(stop, Stop.TYPE_STOP)
+        n_stops += 1
     dao.flush()
     logger.info("Imported %d stations and %d stops" % (n_stations, n_stops))
     
