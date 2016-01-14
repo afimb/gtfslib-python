@@ -77,7 +77,7 @@ class Gtfs(object):
             dict(obj='Route', getter='routes', table='routes.txt'),
             dict(obj='Trip', getter='trips', table='trips.txt'),
             dict(obj='StopTime', getter='stop_times', table='stop_times.txt'),
-            dict(obj='Calendar', getter='calendars', table='calendar.txt'),
+            dict(obj='Calendar', getter='calendars', table='calendar.txt', optional=True),
             dict(obj='CalendarDate', getter='calendar_dates', table='calendar_dates.txt', optional=True),
             dict(obj='Transfer', getter='transfers', table='transfers.txt')
     ]
