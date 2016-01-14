@@ -62,13 +62,17 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
     n_agencies = 0
     single_agency = None
     for agency in gtfs.agencies():
-        agency2 = Agency(feed_id, **vars(agency))
-        dao.add(agency2)
+        aval = vars(agency)
+        # agency_id is optional only if we have a single agency
+        if n_agencies == 0 and aval.get('agency_id') is None:
+            aval['agency_id'] = ''
+        agency2 = Agency(feed_id, **aval)
         if n_agencies == 0:
             single_agency = agency2
         else:
             single_agency = None
         n_agencies += 1
+        dao.add(agency2)
     dao.flush()
     logger.info("Imported %d agencies" % n_agencies)
 
@@ -78,6 +82,9 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
         if sval['location_type'] != stoptype:
             return
         sval['wheelchair_boarding'] = _toint(sval.get('wheelchair_boarding'), Stop.WHEELCHAIR_UNKNOWN)
+        # Replace None by some default value to allow missing lat/lon
+        sval['stop_lat'] = _tofloat(sval.get('stop_lat'), None)
+        sval['stop_lon'] = _tofloat(sval.get('stop_lon'), None)
         # This field has been renamed for consistency
         parent_id = sval.get('parent_station')
         sval['parent_station_id'] = parent_id if parent_id else None
@@ -101,10 +108,11 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
     for route in gtfs.routes():
         rval = vars(route)
         rval['route_type'] = int(route.route_type)
-        route2 = Route(feed_id, **rval)
-        if route2.agency is None and single_agency is not None:
+        agency_id = rval.get('agency_id')
+        if (agency_id is None or len(agency_id) == 0) and single_agency is not None:
             # Route.agency is optional if only a single agency exists.
-            route2.agency = single_agency
+            rval['agency_id'] = single_agency.agency_id
+        route2 = Route(feed_id, **rval)
         dao.add(route2)
         n_routes += 1
     dao.flush()
