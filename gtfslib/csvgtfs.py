@@ -22,7 +22,6 @@ import io
 import six
 import zipfile
 
-
 class CsvTableFactory(object):
 
     def __init__(self, objname, rows):
@@ -38,8 +37,8 @@ class CsvTableFactory(object):
 
     def __next__(self):
         row = six.next(self._rows)
-        dic = dict(zip(self._header, row))
-        return self._factory(**dic)
+        args = dict(six.moves.zip_longest(self._header, row, fillvalue=None))
+        return self._factory(**args)
         # return dic
     
     def next(self):
