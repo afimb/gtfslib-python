@@ -49,8 +49,17 @@ class TestMiniGtfs(unittest.TestCase):
 
         # Check if optional route agency is set
         a = dao.agency("A")
-        self.assertTrue(a.agency_name == "Mini Agency")
+        self.assertTrue(a is not None)
         self.assertTrue(len(a.routes) == 1)
+
+    def test_whitespace_stripping(self):
+        dao = Dao(DAO_URL, sql_logging=SQL_LOG)
+        dao.load_gtfs(MINI_GTFS)
+
+        # Check if whitespace stripping works
+        a = dao.agency("A")
+        self.assertTrue(a.agency_name == "Mini Agency")
+        self.assertTrue(a.agency_lang == "en")
 
     def test_hops(self):
         dao = Dao(DAO_URL, sql_logging=SQL_LOG)
