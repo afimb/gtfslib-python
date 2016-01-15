@@ -29,7 +29,7 @@ setup(
     ],
     keywords='GTFS transit',
     packages=find_packages(),
-    install_requires=['sqlalchemy', 'six', 'docopt'],
+    install_requires=['sqlalchemy', 'six', 'docopt', 'requests'],
     extras_require={
         'dev': ['check-manifest'],
         'test': ['coverage'],
