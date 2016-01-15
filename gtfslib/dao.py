@@ -282,5 +282,24 @@ class Dao(object):
             return _page_generator(query, batch_size)
             
     def load_gtfs(self, filename, feed_id="", **kwargs):
-        with Gtfs(ZipFileSource(filename)).load() as gtfs:
-            _convert_gtfs_model(feed_id, gtfs, self, **kwargs)
+        @transactional(self.session())
+        def _do_load_gtfs():
+            with Gtfs(ZipFileSource(filename)).load() as gtfs:
+                _convert_gtfs_model(feed_id, gtfs, self, **kwargs)
+        _do_load_gtfs()
+
+def transactional(session):
+    def wrap(func):
+        def wrapped_func(*args, **kwargs):
+            # No need to open the transaction
+            # as it is automatically opened in
+            # non auto-commit mode.
+            try:
+                ret = func(*args, **kwargs)
+                session.commit()
+                return ret
+            except:
+                session.rollback()
+                raise
+        return wrapped_func
+    return wrap

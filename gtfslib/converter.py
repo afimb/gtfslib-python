@@ -264,6 +264,4 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
             dao.flush()
     logger.info("Normalized %d trips" % ntrips)
     dao.flush()
-    
-    dao.commit()
     logger.info("Feed '%s': import done." % feed_id)
