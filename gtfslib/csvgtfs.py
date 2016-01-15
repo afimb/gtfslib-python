@@ -26,7 +26,7 @@ class CsvTableFactory(object):
 
     def __init__(self, objname, rows):
         self._header = six.next(rows)
-        if self._header[0].startswith(u'\ufeff'):
+        if self._header[0].startswith(six.u('\ufeff')):
             self._header[0] = self._header[0][1:]
         self._rows = rows
         self._factory = collections.namedtuple(objname, self._header)
