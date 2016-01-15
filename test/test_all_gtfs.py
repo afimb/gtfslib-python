@@ -44,6 +44,8 @@ IDS_TO_LOAD = None
 # IDS_TO_LOAD = [ 'janesville-transit-system' ]
 # Contain header with space
 # IDS_TO_LOAD = [ 'rseau-stan' ]
+# Breaks on non-unique stop time
+# IDS_TO_LOAD = [ 'biaostocka-komunikacja-miejska' ]
 
 class TestDao(unittest.TestCase):
 
@@ -139,12 +141,12 @@ class TestDao(unittest.TestCase):
                 print("Importing into DAO as ID [%s]" % (deid))
                 try:
                     dao.load_gtfs("%s/%s.gtfs.zip" % (DIR, deid), feed_id=deid)
-                except Exception as error:
+                except:
                     error_filename = "%s/%s.error" % (DIR, deid)
                     print("Import of [%s]: FAILED. Logging error to '%s'" % (deid, error_filename))
                     with open(error_filename, 'wb') as errfile:
                         errfile.write(traceback.format_exc())
-                    raise error
+                    raise
                 print("Import of [%s]: OK." % (deid))
 
             except Exception as error:
