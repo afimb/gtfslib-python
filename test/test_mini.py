@@ -13,6 +13,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
+from gtfslib.model import Trip
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -52,6 +53,24 @@ class TestMiniGtfs(unittest.TestCase):
         self.assertTrue(a is not None)
         self.assertTrue(len(a.routes) == 1)
 
+        # Check for frequency-generated trips
+        # They should all have the same delta
+        trips = dao.trips(fltr=(Trip.frequency_generated == True), prefetch_stop_times=True)
+        n_trips = 0
+        deltas = {}
+        for trip in trips:
+            original_trip_id = trip.trip_id.rsplit('@', 1)[0]
+            delta1 = []
+            for st1, st2 in trip.hops():
+                delta1.append(st2.arrival_time - st1.departure_time)
+            delta2 = deltas.get(original_trip_id)
+            if delta2 is not None:
+                self.assertTrue(delta1 == delta2)
+            else:
+                deltas[original_trip_id] = delta1
+            n_trips += 1
+        self.assertTrue(n_trips == 8)
+
     def test_whitespace_stripping(self):
         dao = Dao(DAO_URL, sql_logging=SQL_LOG)
         dao.load_gtfs(MINI_GTFS)
@@ -72,7 +91,8 @@ class TestMiniGtfs(unittest.TestCase):
             self.assertTrue(st1.stop_sequence + 1 == st2.stop_sequence)
             self.assertTrue(st1.trip == st2.trip)
             nhops += 1
-        self.assertTrue(nhops == 8)
+        # 2 standard trips + 2 frequency generated (8 total)
+        self.assertTrue(nhops == 2 * 2 + 8 * 2)
 
         # Get all hops with a distance <= 70km
         hops = dao.hops(fltr=(dao.hopSecond().shape_dist_traveled - dao.hopFirst().shape_dist_traveled <= 70000))
