@@ -150,6 +150,7 @@ class _Orm(object):
                 Column('wheelchair_accessible', Integer, nullable=False),
                 Column('bikes_allowed', Integer, nullable=False),
                 Column('exact_times', Integer, nullable=False),
+                Column('frequency_generated', Boolean, nullable=False),
                 Column('trip_headsign', String),
                 Column('trip_short_name', String),
                 Column('direction_id', Integer),

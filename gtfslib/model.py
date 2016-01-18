@@ -187,7 +187,8 @@ class Trip(object):
     def __init__(self, feed_id, trip_id, route_id, service_id,
                  wheelchair_accessible=WHEELCHAIR_UNKNOWN,
                  bikes_allowed=BIKES_UNKNOWN,
-                 exact_times=TIME_EXACT, **kwargs):
+                 exact_times=TIME_EXACT,
+                 frequency_generated=False, **kwargs):
         self.feed_id = feed_id
         self.trip_id = trip_id
         self.route_id = route_id
@@ -195,6 +196,7 @@ class Trip(object):
         self.wheelchair_accessible = wheelchair_accessible
         self.bikes_allowed = bikes_allowed
         self.exact_times = exact_times
+        self.frequency_generated = frequency_generated
         for key in kwargs:
             setattr(self, key, kwargs[key])
 

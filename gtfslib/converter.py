@@ -20,7 +20,7 @@ import logging
 
 from gtfslib.model import Agency, FeedInfo, Route, Calendar, CalendarDate, Stop, \
     Trip, StopTime
-from gtfslib.utils import timing
+from gtfslib.utils import timing, fmttime
 from gtfslib.spatial import DistanceCache
 
 logger = logging.getLogger('libgtfs')
@@ -163,7 +163,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
         tval = vars(trip)
         tval['wheelchair_accessible'] = _toint(tval.get('wheelchair_accessible'), Trip.WHEELCHAIR_UNKNOWN)
         tval['bikes_allowed'] = _toint(tval.get('bikes_allowed'), Trip.BIKES_UNKNOWN)
-        trip2 = Trip(feed_id, **tval)
+        trip2 = Trip(feed_id, frequency_generated=False, **tval)
         dao.add(trip2)
         n_trips += 1
     dao.flush()
@@ -262,6 +262,58 @@ def _convert_gtfs_model(feed_id, gtfs, dao):
         if ntrips % 1000 == 0:
             logger.info("%d trips" % ntrips)
             dao.flush()
-    logger.info("Normalized %d trips" % ntrips)
     dao.flush()
+    logger.info("Normalized %d trips" % ntrips)
+
+    # Note: we expand frequencies *after* normalization
+    # for performances purpose only: that minimize the
+    # number of trips to normalize. We can do that since
+    # the expansion is neutral trip-normalization-wise.
+    logger.info("Expanding frequencies...")
+    n_freq = 0
+    n_exp_trips = 0
+    for frequency in gtfs.frequencies():
+        fval = vars(frequency)
+        trip = dao.trip(fval.get('trip_id'), feed_id=feed_id)
+        start_time = _timetoint(fval.get('start_time'))
+        end_time = _timetoint(fval.get('end_time'))
+        headway_secs = _toint(fval.get('headway_secs'))
+        exact_times = _toint(fval.get('exact_times'), Trip.TIME_APPROX)
+        for trip_dep_time in range(start_time, end_time, headway_secs):
+            # Here we assume departure time are all different.
+            # That's a requirement in the GTFS specs, but this may break.
+            # TODO Make the expanded trip ID generation parametrable.
+            trip_id2 = trip.trip_id + "@" + fmttime(trip_dep_time)
+            trip2 = Trip(feed_id, trip_id2, trip.route_id, trip.service_id,
+                         wheelchair_accessible=trip.wheelchair_accessible,
+                         bikes_allowed=trip.bikes_allowed,
+                         exact_times=exact_times,
+                         frequency_generated=True,
+                         trip_headsign=trip.trip_headsign,
+                         trip_short_name=trip.trip_short_name,
+                         direction_id=trip.direction_id,
+                         block_id=trip.block_id)
+            trip2.stop_times = []
+            base_time = trip.stop_times[0].departure_time
+            for stoptime in trip.stop_times:
+                arrtime = None if stoptime.arrival_time is None else stoptime.arrival_time - base_time + trip_dep_time
+                deptime = None if stoptime.departure_time is None else stoptime.departure_time - base_time + trip_dep_time
+                stoptime2 = StopTime(feed_id, trip_id2, stoptime.stop_id, stoptime.stop_sequence,
+                            arrival_time=arrtime,
+                            departure_time=deptime,
+                            shape_dist_traveled=stoptime.shape_dist_traveled,
+                            interpolated=stoptime.interpolated,
+                            timepoint=stoptime.timepoint,
+                            pickup_type=stoptime.pickup_type,
+                            dropoff_type=stoptime.dropoff_type)
+                trip2.stop_times.append(stoptime2)
+            n_exp_trips += 1
+            # This will add the associated stop times
+            dao.add(trip2)
+        # This also delete the associated stop times
+        dao.delete(trip)
+        n_freq += 1
+    dao.flush()
+    logger.info("Expanded %d frequencies to %d trips." % (n_freq, n_exp_trips))
+
     logger.info("Feed '%s': import done." % feed_id)
