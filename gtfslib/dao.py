@@ -281,11 +281,11 @@ class Dao(object):
         else:
             return _page_generator(query, batch_size)
             
-    def load_gtfs(self, filename, feed_id="", **kwargs):
+    def load_gtfs(self, filename, feed_id="", lenient=False, **kwargs):
         @transactional(self.session())
         def _do_load_gtfs():
             with Gtfs(ZipFileSource(filename)).load() as gtfs:
-                _convert_gtfs_model(feed_id, gtfs, self, **kwargs)
+                _convert_gtfs_model(feed_id, gtfs, self, lenient, **kwargs)
         _do_load_gtfs()
 
 def transactional(session):
