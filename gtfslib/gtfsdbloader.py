@@ -17,7 +17,7 @@
 """gtfsdbloader - GTFS to GTFS' conversion tool and database loader
 
 Usage:
-  gtfsdbloader <database> (--load=<gtfs> | --delete | --list) [--id=<id>] [--append] [--logsql] [--lenient]
+  gtfsdbloader <database> (--load=<gtfs> | --delete | --list) [--id=<id>] [--logsql] [--lenient]
   gtfsdbloader (-h | --help)
   gtfsdbloader --version
 
@@ -25,7 +25,6 @@ Options:
   <database>           The database to use. If a file, assume SQLite.
                        For PostgreSQL: "postgresql://user:pwd@host:port/db".
   --load=<gtfs>        The zipped GTFS file to load.
-  --append             Do not delete existing feed when loading (TODO).
   --delete             Delete feed.
   --list               List all feeds.
   --id=<id>            Set the feed ID in case multiple GTFS are to be loaded.
