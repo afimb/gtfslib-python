@@ -17,7 +17,7 @@
 """gtfsdbloader - GTFS to GTFS' conversion tool and database loader
 
 Usage:
-  gtfsdbloader <database> (--load=<gtfs> | --delete | --list) [--id=<id>] [--append] [--logsql]
+  gtfsdbloader <database> (--load=<gtfs> | --delete | --list) [--id=<id>] [--append] [--logsql] [--lenient]
   gtfsdbloader (-h | --help)
   gtfsdbloader --version
 
@@ -32,6 +32,7 @@ Options:
   -h --help            Show help on options.
   --version            Show lib / program version.
   --logsql             Enable SQL logging (very verbose)
+  --lenient            Allow some level of brokenness in GTFS input.
 
 Examples:
   gtfsdbloader db.sqlite --load=sncf.zip --id=sncf
@@ -82,7 +83,7 @@ def main():
             dao.commit()
 
     if arguments['--load']:
-        dao.load_gtfs(arguments['--load'], feed_id=arguments['--id'])
+        dao.load_gtfs(arguments['--load'], feed_id=arguments['--id'], lenient=arguments['--lenient'])
 
 if __name__ == '__main__':
     main()
