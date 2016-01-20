@@ -21,7 +21,7 @@ import unittest
 
 from gtfslib.dao import Dao
 from gtfslib.model import CalendarDate, FeedInfo, Agency, Route, Calendar, Stop, \
-    Trip, StopTime
+    Trip, StopTime, Transfer
 
 
 class TestDao(unittest.TestCase):
@@ -153,6 +153,45 @@ class TestDao(unittest.TestCase):
             for stoptime1, stoptime2 in trip.hops():
                 self.assertTrue(stoptime1.trip == stoptime2.trip)
                 self.assertTrue(stoptime1.stop_sequence + 1 == stoptime2.stop_sequence)
+
+    def test_transfers(self):
+        dao = Dao()
+        f1 = FeedInfo("F1")
+        s1 = Stop("F1", "S1", "Stop 1", 45.0000, 0.0000)
+        s2 = Stop("F1", "S2", "Stop 2", 45.0001, 0.0001)
+        s3 = Stop("F1", "S3", "Stop 3", 45.0002, 0.0002)
+        t12 = Transfer("F1", "S1", "S2")
+        t21 = Transfer("F1", "S2", "S1")
+        t23 = Transfer("F1", "S2", "S3", transfer_type=Transfer.TRANSFER_TIMED, min_transfer_time=180)
+        t32 = Transfer("F1", "S3", "S2", transfer_type=Transfer.TRANSFER_TIMED, min_transfer_time=120)
+        t13 = Transfer("F1", "S1", "S3", transfer_type=Transfer.TRANSFER_NONE)
+        dao.add_all([ f1, s1, s2, s3, t12, t21, t23, t32, t13 ])
+
+        self.assertTrue(len(dao.transfers()) == 5)
+
+        timed_transfers = dao.transfers(fltr=(Transfer.transfer_type == Transfer.TRANSFER_TIMED))
+        self.assertTrue(len(timed_transfers) == 2)
+        for transfer in timed_transfers:
+            self.assertTrue(transfer.transfer_type == Transfer.TRANSFER_TIMED)
+
+        s1_from_transfers = dao.transfers(stop_fltr=(dao.transfer_from_stop().stop_name == "Stop 1"))
+        self.assertTrue(len(s1_from_transfers) == 2)
+        for transfer in s1_from_transfers:
+            self.assertTrue(transfer.from_stop.stop_name == "Stop 1")
+
+        s1_fromto_transfers = dao.transfers(stop_fltr=((dao.transfer_from_stop().stop_name == "Stop 1") | (dao.transfer_to_stop().stop_name == "Stop 1")))
+        self.assertTrue(len(s1_fromto_transfers) == 3)
+        for transfer in s1_fromto_transfers:
+            self.assertTrue(transfer.from_stop.stop_name == "Stop 1" or transfer.to_stop.stop_name == "Stop 1")
+
+        s1 = dao.stop("S1", feed_id="F1")
+        self.assertTrue(len(s1.from_transfers) == 2)
+        self.assertTrue(len(s1.to_transfers) == 1)
+        for transfer in s1.from_transfers:
+            if transfer.to_stop.stop_id == "S2":
+                self.assertTrue(transfer.transfer_type == Transfer.TRANSFER_DEFAULT)
+            elif transfer.to_stop.stop_id == "S3":
+                self.assertTrue(transfer.transfer_type == Transfer.TRANSFER_NONE)
 
 if __name__ == '__main__':
     unittest.main()
