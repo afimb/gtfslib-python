@@ -24,7 +24,7 @@ from sqlalchemy.sql.schema import Column, MetaData, Table, ForeignKey, \
 from sqlalchemy.sql.sqltypes import String, Integer, Float, Date, Boolean
 
 from gtfslib.model import FeedInfo, Agency, Stop, Route, Calendar, CalendarDate, \
-    Trip, StopTime
+    Trip, StopTime, Transfer
 
 
 # ORM Mappings
@@ -89,6 +89,28 @@ class _Orm(object):
                                    primaryjoin=(_stop_parent_id_column == foreign(_stop_id_column)) & (_stop_feed_id_column == _stop_feed_id_column)),
         'parent_station' : relationship(Stop, remote_side=[_stop_feed_id_column, _stop_id_column],
                                    primaryjoin=(_stop_id_column == foreign(_stop_parent_id_column)) & (_stop_feed_id_column == _stop_feed_id_column))
+    })
+
+    _transfer_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
+    _transfer_from_stop_id_column = Column('from_stop_id', String, primary_key=True)
+    _transfer_to_stop_id_column = Column('to_stop_id', String, primary_key=True)
+    _transfer_mapper = Table('transfers', _metadata,
+                _transfer_feed_id_column,
+                _transfer_from_stop_id_column,
+                _transfer_to_stop_id_column,
+                Column('transfer_type', Integer, nullable=False),
+                Column('min_transfer_time', Integer),
+                ForeignKeyConstraint(['feed_id', 'from_stop_id'], ['stops.feed_id', 'stops.stop_id']),
+                ForeignKeyConstraint(['feed_id', 'to_stop_id'], ['stops.feed_id', 'stops.stop_id']),
+                Index('idx_transfer_from', 'feed_id', 'from_stop_id'),
+                Index('idx_transfer_to', 'feed_id', 'to_stop_id'))
+    mapper(Transfer, _transfer_mapper, properties={
+        'feed' : relationship(FeedInfo, backref=backref('transfers', cascade="all,delete-orphan"),
+                              primaryjoin=_feedinfo_id_column == foreign(_transfer_feed_id_column)),
+        'from_stop' : relationship(Stop, backref=backref('from_transfers', cascade='all', uselist=True), uselist=False,
+                                   primaryjoin=(_transfer_from_stop_id_column == foreign(_stop_id_column)) & (_transfer_feed_id_column == _stop_feed_id_column)),
+        'to_stop' : relationship(Stop, backref=backref('to_transfers', cascade='all', uselist=True), uselist=False,
+                                 primaryjoin=(_transfer_to_stop_id_column == foreign(_stop_id_column)) & (_transfer_feed_id_column == _stop_feed_id_column))
     })
 
     _route_id_column = Column('route_id', String, primary_key=True)
