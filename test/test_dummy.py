@@ -111,6 +111,13 @@ class TestDummyGtfs(unittest.TestCase):
             for stop in station.sub_stops:
                 self.assertTrue(stop.parent_station == station)
 
+        # Check transfers
+        transfers = dao.transfers()
+        self.assertTrue(len(transfers) == 3)
+        transfers = dao.transfers(stop_fltr=(dao.transfer_from_stop().stop_id == 'GBSJB'))
+        self.assertTrue(len(transfers) == 1)
+        self.assertTrue(transfers[0].from_stop.stop_id == 'GBSJB')
+
         # Check routes
         tgv = dao.route("TGVBP")
         self.assertTrue(tgv.agency == at)
