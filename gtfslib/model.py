@@ -80,6 +80,24 @@ class Stop(object):
         return "<%s(id=%s/%s, %s)>" % (
                 self.__class__.__name__, self.feed_id, self.stop_id, _public_vars(self))
 
+class Transfer(object):
+
+    TRANSFER_DEFAULT = 0
+    TRANSFER_SYNC = 1
+    TRANSFER_TIMED = 2
+    TRANSFER_NONE = 3
+
+    def __init__(self, feed_id, from_stop_id, to_stop_id, transfer_type=TRANSFER_DEFAULT, min_transfer_time=None):
+        self.feed_id = feed_id
+        self.from_stop_id = from_stop_id
+        self.to_stop_id = to_stop_id
+        self.transfer_type = transfer_type
+        self.min_transfer_time = min_transfer_time
+
+    def __repr__(self):
+        return "<%s(id=%s/%s>%s, %s)>" % (
+                self.__class__.__name__, self.feed_id, self.from_stop_id, self.to_stop_id, _public_vars(self))
+
 class Route(object):
     
     # TODO types
