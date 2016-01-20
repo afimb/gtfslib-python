@@ -25,7 +25,7 @@ from sqlalchemy.orm.session import sessionmaker
 from gtfslib.converter import _convert_gtfs_model
 from gtfslib.csvgtfs import Gtfs, ZipFileSource
 from gtfslib.model import FeedInfo, Agency, Route, Calendar, CalendarDate, Stop, \
-    Trip, StopTime
+    Trip, StopTime, Transfer
 from gtfslib.orm import _Orm
 
 
@@ -51,6 +51,8 @@ class Dao(object):
         self._session = Session()
         self._stoptime1=aliased(StopTime, name="first_stop_time")
         self._stoptime2=aliased(StopTime, name="second_stop_time")
+        self._transfer_fromstop=aliased(Stop, name="from_stop")
+        self._transfer_tostop=aliased(Stop, name="to_stop")
 
     def session(self):
         return self._session
@@ -127,7 +129,31 @@ class Dao(object):
             query = query.options(subqueryload('sub_stops'))
         query = query.order_by(Stop.feed_id, Stop.stop_id)
         return self._page_query(query, batch_size)
+
+    def transfer(self, from_stop_id, to_stop_id, feed_id="", prefetch_stops=True):
+        query = self._session.query(Transfer)
+        if prefetch_stops:
+            query = query.options(subqueryload('from_stop'), subqueryload('to_stop'))
+        return query.get((feed_id, from_stop_id, to_stop_id))
+
+    def transfer_from_stop(self):
+        return self._transfer_fromstop
     
+    def transfer_to_stop(self):
+        return self._transfer_tostop
+
+    def transfers(self, fltr=None, stop_fltr=None, prefetch_stops=True):
+        query = self._session.query(Transfer)
+        if fltr is not None:
+            query = query.filter(fltr)
+        if stop_fltr is not None:
+            query = query.join(self._transfer_fromstop, 'from_stop')
+            query = query.join(self._transfer_tostop, 'to_stop')
+            query = query.filter(stop_fltr)
+        if prefetch_stops:
+            query = query.options(subqueryload('from_stop'), subqueryload('to_stop'))
+        return query.all()
+
     def route(self, route_id, feed_id=""):
         return self._session.query(Route).get((feed_id, route_id))
 
