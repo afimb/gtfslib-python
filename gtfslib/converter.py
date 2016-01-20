@@ -86,13 +86,13 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         lon = _tofloat(sval.get('stop_lon'), None)
         if lat is None or lon is None:
             if lenient:
-                logger.error("Missing lat/lon for stop '%s', set to default (0,0)" % (stop, ))
+                logger.error("Missing lat/lon for '%s', set to default (0,0)" % (stop, ))
                 if lat is None:
                     lat = 0
                 if lon is None:
                     lon = 0
             else:
-                raise ValueError("Missing mandatory lat/lon for stop '%s'." % (stop, ))
+                raise ValueError("Missing mandatory lat/lon for '%s'." % (stop, ))
         sval['stop_lat'] = lat
         sval['stop_lon'] = lon
         # This field has been renamed for consistency
@@ -100,10 +100,10 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         sval['parent_station_id'] = parent_id
         if parent_id and station_ids and parent_id not in station_ids:
             if lenient:
-                logger.error("Parent station ID '%s' in stop '%s' is invalid, resetting." % (parent_id, stop))
+                logger.error("Parent station ID '%s' in '%s' is invalid, resetting." % (parent_id, stop))
                 sval['parent_station_id'] = None
             else:
-                raise KeyError("Parent station ID '%s' in stop '%s' is invalid." % (parent_id, stop))
+                raise KeyError("Parent station ID '%s' in '%s' is invalid." % (parent_id, stop))
         sval.pop('parent_station', None)
         stop2 = Stop(feed_id, **sval)
         dao.add(stop2)
@@ -131,10 +131,10 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         for stop_id in (from_stop_id, to_stop_id):
             if stop_id not in station_ids and stop_id not in stop_ids:
                 if lenient:
-                    logger.error("Stop ID '%s' in transfer '%s' is invalid, skipping." % (stop_id, stop))
+                    logger.error("Stop ID '%s' in '%s' is invalid, skipping." % (stop_id, transfer))
                     continue
                 else:
-                    raise KeyError("Stop ID '%s' in transfer '%s' is invalid." % (stop_id, stop))
+                    raise KeyError("Stop ID '%s' in '%s' is invalid." % (stop_id, transfer))
         transfer = Transfer(feed_id, **tval)
         dao.add(transfer)
     dao.flush()
@@ -152,10 +152,10 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
             agency_id = rval['agency_id'] = single_agency.agency_id
         if agency_id not in agency_ids:
             if lenient:
-                logger.error("Agency ID '%s' in route '%s' is invalid, skipping route." % (agency_id, route))
+                logger.error("Agency ID '%s' in '%s' is invalid, skipping route." % (agency_id, route))
                 continue
             else:
-                raise KeyError("agency ID '%s' in route '%s' is invalid." % (agency_id, route))
+                raise KeyError("agency ID '%s' in '%s' is invalid." % (agency_id, route))
         route2 = Route(feed_id, **rval)
         dao.add(route2)
         route_ids.add(route2.route_id)
@@ -214,14 +214,14 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         cal_id = trip.service_id
         if cal_id not in calendar_ids:
             if lenient:
-                logger.error("Calendar ID '%s' in trip '%s' is invalid. Skipping trip." % (cal_id, trip))
+                logger.error("Calendar ID '%s' in '%s' is invalid. Skipping trip." % (cal_id, trip))
                 continue
             else:
-                raise KeyError("Calendar ID '%s' in trip '%s' is invalid." % (cal_id, trip))
+                raise KeyError("Calendar ID '%s' in '%s' is invalid." % (cal_id, trip))
         route_id = trip.route_id
         if route_id not in route_ids:
             if lenient:
-                logger.error("Route ID '%s' in trip '%s' is invalid. Skipping trip." % (route_id, trip))
+                logger.error("Route ID '%s' in '%s' is invalid. Skipping trip." % (route_id, trip))
                 continue
             else:
                 raise KeyError("Route ID '%s' in trip '%s' is invalid." % (route_id, trip))
@@ -251,14 +251,14 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         trip_id = stoptime.trip_id
         if trip_id not in trip_ids:
             if lenient:
-                logger.error("Trip ID '%s' in stoptime '%s' is invalid. Skipping stop time." % (trip_id, stoptime))
+                logger.error("Trip ID '%s' in '%s' is invalid. Skipping stop time." % (trip_id, stoptime))
                 continue
             else:
-                raise KeyError("Trip ID '%s' in stoptime '%s' is invalid." % (trip_id, stoptime))
+                raise KeyError("Trip ID '%s' in '%s' is invalid." % (trip_id, stoptime))
         stop_id = stoptime.stop_id
         if stop_id not in stop_ids:
             if lenient:
-                logger.error("Stop ID '%s' in stoptime '%s' is invalid. Skipping stop time." % (stop_id, stoptime))
+                logger.error("Stop ID '%s' in '%s' is invalid. Skipping stop time." % (stop_id, stoptime))
                 continue
             else:
                 raise KeyError("Trip ID '%s' in stoptime '%s' is invalid." % (stop_id, stoptime))
@@ -355,10 +355,10 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         trip_id = frequency.trip_id
         if trip_id not in trip_ids:
             if lenient:
-                logger.error("Trip ID '%s' in frequency '%s' is invalid. Skipping frequency." % (trip_id, frequency))
+                logger.error("Trip ID '%s' in '%s' is invalid. Skipping frequency." % (trip_id, frequency))
                 continue
             else:
-                raise KeyError("Trip ID '%s' in frequency '%s' is invalid." % (trip_id, frequency))
+                raise KeyError("Trip ID '%s' in '%s' is invalid." % (trip_id, frequency))
         trip = dao.trip(trip_id, feed_id=feed_id)
         start_time = _timetoint(fval.get('start_time'))
         end_time = _timetoint(fval.get('end_time'))
