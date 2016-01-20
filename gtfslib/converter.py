@@ -19,7 +19,7 @@
 import logging
 
 from gtfslib.model import Agency, FeedInfo, Route, Calendar, CalendarDate, Stop, \
-    Trip, StopTime
+    Trip, StopTime, Transfer
 from gtfslib.utils import timing, fmttime
 from gtfslib.spatial import DistanceCache
 
@@ -121,6 +121,24 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         n_stops += 1
     dao.flush()
     logger.info("Imported %d stations and %d stops" % (n_stations, n_stops))
+
+    logger.info("Importing transfers...")
+    n_transfers = 0
+    for transfer in gtfs.transfers():
+        tval = vars(transfer)
+        from_stop_id = tval.get('from_stop_id')
+        to_stop_id = tval.get('to_stop_id')
+        for stop_id in (from_stop_id, to_stop_id):
+            if stop_id not in station_ids and stop_id not in stop_ids:
+                if lenient:
+                    logger.error("Stop ID '%s' in transfer '%s' is invalid, skipping." % (stop_id, stop))
+                    continue
+                else:
+                    raise KeyError("Stop ID '%s' in transfer '%s' is invalid." % (stop_id, stop))
+        transfer = Transfer(feed_id, **tval)
+        dao.add(transfer)
+    dao.flush()
+    logger.info("Imported %d transfers" % (n_transfers))
     
     logger.info("Importing routes...")
     n_routes = 0
