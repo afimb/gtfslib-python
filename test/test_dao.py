@@ -13,6 +13,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
+from gtfslib.spatial import RectangularArea
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -192,6 +193,23 @@ class TestDao(unittest.TestCase):
                 self.assertTrue(transfer.transfer_type == Transfer.TRANSFER_DEFAULT)
             elif transfer.to_stop.stop_id == "S3":
                 self.assertTrue(transfer.transfer_type == Transfer.TRANSFER_NONE)
+
+    def test_areas(self):
+        dao = Dao()
+        f1 = FeedInfo("F1")
+        s1 = Stop("F1", "S1", "Stop 1", 45.0, 0.0)
+        s2 = Stop("F1", "S2", "Stop 2", 45.1, 0.1)
+        s3 = Stop("F1", "S3", "Stop 3", 45.2, 0.2)
+        dao.add_all([ f1, s1, s2, s3 ])
+
+        # Rectangular area
+        stops = dao.stops(fltr=dao.in_area(RectangularArea(0, 0, 1, 1)))
+        self.assertTrue(len(stops) == 0)
+        stops = dao.stops(fltr=dao.in_area(RectangularArea(-90, -180, 90, 180)))
+        self.assertTrue(len(stops) == 3)
+        stops = dao.stops(fltr=dao.in_area(RectangularArea(45.05, 0.05, 45.15, 0.15)))
+        self.assertTrue(len(stops) == 1)
+        self.assertTrue(stops[0].stop_id == 'S2')
 
 if __name__ == '__main__':
     unittest.main()
