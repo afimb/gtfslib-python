@@ -258,10 +258,10 @@ class Dao(object):
         query = query.order_by(StopTime.feed_id, StopTime.trip_id, StopTime.stop_sequence)
         return self._page_query(query, batch_size)
 
-    def hopFirst(self):
+    def hop_first(self):
         return self._stoptime1
 
-    def hopSecond(self):
+    def hop_second(self):
         return self._stoptime2
 
     def hops(self, delta=1, fltr=None, trip_fltr=None, route_fltr=None, calendar_fltr=None, prefetch_trips=True, prefetch_stop_times=False):

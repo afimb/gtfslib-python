@@ -95,7 +95,7 @@ class TestMiniGtfs(unittest.TestCase):
         self.assertTrue(nhops == 2 * 2 + 8 * 2)
 
         # Get all hops with a distance <= 70km
-        hops = dao.hops(fltr=(dao.hopSecond().shape_dist_traveled - dao.hopFirst().shape_dist_traveled <= 70000))
+        hops = dao.hops(fltr=(dao.hop_second().shape_dist_traveled - dao.hop_first().shape_dist_traveled <= 70000))
         nhops1 = 0
         for st1, st2 in hops:
             self.assertTrue(st1.stop_sequence + 1 == st2.stop_sequence)
@@ -104,7 +104,7 @@ class TestMiniGtfs(unittest.TestCase):
             nhops1 += 1
 
         # Get all hops with a distance > 70km
-        hops = dao.hops(fltr=(dao.hopSecond().shape_dist_traveled - dao.hopFirst().shape_dist_traveled > 70000))
+        hops = dao.hops(fltr=(dao.hop_second().shape_dist_traveled - dao.hop_first().shape_dist_traveled > 70000))
         nhops2 = 0
         for st1, st2 in hops:
             self.assertTrue(st1.stop_sequence + 1 == st2.stop_sequence)
@@ -114,10 +114,10 @@ class TestMiniGtfs(unittest.TestCase):
         self.assertTrue(nhops == nhops1 + nhops2)
 
         # Get all hops with a time +/- 1h
-        hops = dao.hops(fltr=(dao.hopSecond().arrival_time - dao.hopFirst().departure_time >= 3600))
+        hops = dao.hops(fltr=(dao.hop_second().arrival_time - dao.hop_first().departure_time >= 3600))
         for st1, st2 in hops:
             self.assertTrue(st2.arrival_time - st1.departure_time >= 3600)
-        hops = dao.hops(fltr=(dao.hopSecond().arrival_time - dao.hopFirst().departure_time < 3600))
+        hops = dao.hops(fltr=(dao.hop_second().arrival_time - dao.hop_first().departure_time < 3600))
         for st1, st2 in hops:
             self.assertTrue(st2.arrival_time - st1.departure_time < 3600)
 
