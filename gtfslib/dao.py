@@ -110,7 +110,7 @@ class Dao(object):
             query = query.options(subqueryload('sub_stops'))
         return query.get((feed_id, stop_id))
     
-    def stops(self, fltr=None, trip_fltr=None, calendar_fltr=None, zone=None, prefetch_parent=True, prefetch_substops=True, batch_size=0):
+    def stops(self, fltr=None, trip_fltr=None, calendar_fltr=None, prefetch_parent=True, prefetch_substops=True, batch_size=0):
         query = self._session.query(Stop)
         if fltr is not None:
             query = query.filter(fltr)
@@ -120,15 +120,15 @@ class Dao(object):
             query = query.filter(trip_fltr)
         if calendar_fltr is not None:
             query = query.join(Calendar).join(CalendarDate).filter(calendar_fltr)
-        if zone is not None:
-            # TODO Use SQLAlchemy hybrid for this?
-            query = query.filter((Stop.stop_lat >= zone.min_lat) & (Stop.stop_lat <= zone.max_lat) & (Stop.stop_lon >= zone.min_lon) & (Stop.stop_lon <= zone.max_lon))
         if prefetch_parent:
             query = query.options(subqueryload('parent_station'))
         if prefetch_substops:
             query = query.options(subqueryload('sub_stops'))
         query = query.order_by(Stop.feed_id, Stop.stop_id)
         return self._page_query(query, batch_size)
+
+    def in_area(self, area):
+        return (Stop.stop_lat >= area.min_lat) & (Stop.stop_lat <= area.max_lat) & (Stop.stop_lon >= area.min_lon) & (Stop.stop_lon <= area.max_lon)
 
     def transfer(self, from_stop_id, to_stop_id, feed_id="", prefetch_stops=True):
         query = self._session.query(Transfer)

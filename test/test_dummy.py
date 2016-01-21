@@ -101,7 +101,7 @@ class TestDummyGtfs(unittest.TestCase):
             n += 1
         self.assertTrue(n == 7)
         n = 0
-        for stop in dao.stops(zone=RectangularArea(44.7, -0.6, 44.9, -0.4)):
+        for stop in dao.stops(fltr=dao.in_area(RectangularArea(44.7, -0.6, 44.9, -0.4))):
             self.assertTrue(stop.stop_lat >= 44.7 and stop.stop_lat <= 44.9 and stop.stop_lon >= -0.6 and stop.stop_lon <= -0.4)
             n += 1
         self.assertTrue(n == 16)
