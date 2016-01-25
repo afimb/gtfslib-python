@@ -279,7 +279,8 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     logger.info("Normalizing trips...")
     ntrips = 0
     dcache = DistanceCache()
-    for trip in dao.trips(fltr=Trip.feed_id == feed_id, prefetch_stop_times=True, prefetch_stops=True, batch_size=10000):
+    # TODO Disabled batching for now, replace by batching in python using our list of trip IDs.
+    for trip in dao.trips(fltr=Trip.feed_id == feed_id, prefetch_stop_times=True, prefetch_stops=True):
         stopseq = 0
         n_stoptimes = len(trip.stop_times)
         distance = 0
