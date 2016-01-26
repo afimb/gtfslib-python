@@ -97,7 +97,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         sval['stop_lon'] = lon
         # This field has been renamed for consistency
         parent_id = sval.get('parent_station')
-        sval['parent_station_id'] = parent_id
+        sval['parent_station_id'] = parent_id if parent_id else None
         if parent_id and station_ids and parent_id not in station_ids:
             if lenient:
                 logger.error("Parent station ID '%s' in '%s' is invalid, resetting." % (parent_id, stop))
