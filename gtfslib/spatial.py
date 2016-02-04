@@ -18,6 +18,8 @@
 """
 import math
 
+# Radius of earth in meters
+EARTH_RADIUS = 6371000
 
 def orthodromic_distance(a, b):
     # Use Haversine formula
@@ -25,9 +27,35 @@ def orthodromic_distance(a, b):
     dlon = lon_b - lon_a 
     dlat = lat_b - lat_a 
     c = 2 * math.asin(math.sqrt(math.sin(dlat / 2) ** 2 + math.cos(lat_a) * math.cos(lat_b) * math.sin(dlon / 2) ** 2))
-    # Radius of earth in km.
-    EARTH_RADIUS = 6371
-    return c * EARTH_RADIUS * 1000
+    return c * EARTH_RADIUS
+
+def orthodromic_seg_distance(p, a, b):
+    # Use approximate equirectangular projection
+    x_p = math.radians(p.lat())
+    cos_p = math.cos(x_p)
+    y_p, y_a, y_b = map(lambda q: math.radians(q.lon()) * cos_p, [p, a, b])
+    x_a, x_b = map(lambda q: math.radians(q.lat()), [a, b])
+    # Compute [AB] length
+    l2 = (x_a - x_b) * (x_a - x_b) + (y_a - y_b) * (y_a - y_b)
+    if l2 == 0:
+        # Pathological d(AB)=0 case, d = d(PA)
+        d2 = (x_p - x_a) * (x_p - x_a) + (y_p - y_a) * (y_p - y_a)
+    else:
+        # Compute t, linear coordinate of C in the [AB] vector basis
+        # and where C is the projection of P on line (AB).
+        t = ((x_p - x_a) * (x_b - x_a) + (y_p - y_a) * (y_b - y_a)) / l2
+        if t < 0:
+            # C outside [AB] on A side: d = d(PA)
+            d2 = (x_p - x_a) * (x_p - x_a) + (y_p - y_a) * (y_p - y_a)
+        elif t > 1:
+            # C outside [AB] on B side: d = d(PB)
+            d2 = (x_p - x_b) * (x_p - x_b) + (y_p - y_b) * (y_p - y_b)
+        else:
+            # C inside [AB]: d = d(PC), C = A + t.B
+            xC = x_a + t * (x_b - x_a)
+            yC = y_a + t * (y_b - y_a)
+            d2 = (x_p - xC) * (x_p - xC) + (y_p - yC) * (y_p - yC)
+    return EARTH_RADIUS * math.sqrt(d2)
 
 class DistanceCache(object):
     
