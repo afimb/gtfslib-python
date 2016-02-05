@@ -14,6 +14,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
 from gtfslib.spatial import orthodromic_distance
+import logging
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -94,7 +95,7 @@ class TestGtfs(unittest.TestCase):
         # Assume all trips have len > 2
         self.assertTrue(nhops == nhops2 + ntrips)
 
-        # Test shape_dist_traveled
+        # Test shape_dist_traveled on stoptimes
         for trip in dao.trips():
             # Assume no shapes for now
             distance = 0.0
@@ -108,6 +109,18 @@ class TestGtfs(unittest.TestCase):
                 else:
                     self.assertAlmostEqual(stoptime.shape_dist_traveled, distance, 2)
 
+        # Test shape normalization
+        for shape in dao.shapes():
+            distance = 0.0
+            last_pt = None
+            ptseq = 0
+            for point in shape.points:
+                if last_pt is not None:
+                    distance += orthodromic_distance(last_pt, point)
+                last_pt = point
+                self.assertAlmostEqual(point.shape_dist_traveled, distance, 2)
+                self.assertTrue(point.shape_pt_sequence == ptseq)
+                ptseq += 1
 
     def test_all_gtfs(self):
         for gtfs in GTFS_LIST:
