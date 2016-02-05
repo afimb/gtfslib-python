@@ -22,7 +22,7 @@ import unittest
 
 from gtfslib.dao import Dao
 from gtfslib.model import CalendarDate, FeedInfo, Agency, Route, Calendar, Stop, \
-    Trip, StopTime, Transfer
+    Trip, StopTime, Transfer, Shape, ShapePoint
 
 
 class TestDao(unittest.TestCase):
@@ -210,6 +210,39 @@ class TestDao(unittest.TestCase):
         stops = dao.stops(fltr=dao.in_area(RectangularArea(45.05, 0.05, 45.15, 0.15)))
         self.assertTrue(len(stops) == 1)
         self.assertTrue(stops[0].stop_id == 'S2')
+
+    def test_shapes(self):
+        dao = Dao()
+        f1 = FeedInfo("")
+        a1 = Agency("", "A1", "Agency 1", agency_url="http://www.agency.fr/", agency_timezone="Europe/Paris")
+        r1 = Route("", "R1", "A1", 3, route_short_name="R1", route_long_name="Route 1")
+        c1 = Calendar("", "C1")
+        c1.dates = [ CalendarDate.ymd(2016, 1, 31), CalendarDate.ymd(2016, 2, 1) ]
+        s1 = Stop("", "S1", "Stop 1", 45.0, 0.0)
+        s2 = Stop("", "S2", "Stop 2", 45.1, 0.1)
+        s3 = Stop("", "S3", "Stop 3", 45.2, 0.2)
+        t1 = Trip("", "T1", "R1", "C1")
+        t1.stop_times = [ StopTime(None, None, "S1", 0, 28800, 28800, 0.0),
+                          StopTime(None, None, "S2", 1, 29400, 29400, 2.0),
+                          StopTime(None, None, "S3", 2, 30000, 30000, 4.0) ]
+        t2 = Trip("", "T2", "R1", "C1")
+        t2.stop_times = [ StopTime(None, None, "S2", 0, 30600, 30600, 0.0),
+                          StopTime(None, None, "S1", 1, 31000, 31000, 1.0) ]
+        sh1 = Shape("", "Sh1")
+        sh1.points = [ ShapePoint(None, None, 0, 45.00, 0.00, 0.0),
+                      ShapePoint(None, None, 1, 45.05, 0.10, 1.0),
+                      ShapePoint(None, None, 2, 45.10, 0.10, 2.0),
+                      ShapePoint(None, None, 3, 45.15, 0.20, 3.0),
+                      ShapePoint(None, None, 4, 45.20, 0.20, 4.0) ]
+        t1.shape = sh1
+        dao.add_all([ f1, a1, r1, c1, s1, s2, s3, t1, t2, sh1 ])
+        dao.commit()
+
+        t = dao.trip("T1")
+        self.assertTrue(t.shape.shape_id == "Sh1")
+        self.assertTrue(len(t.shape.points) == 5)
+        t = dao.trip("T2")
+        self.assertTrue(t.shape == None)
 
 if __name__ == '__main__':
     unittest.main()
