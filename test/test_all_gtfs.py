@@ -47,7 +47,7 @@ IDS_TO_LOAD = None
 # Breaks on non-unique stop time
 # IDS_TO_LOAD = [ 'biaostocka-komunikacja-miejska' ]
 
-class TestDao(unittest.TestCase):
+class TestAllGtfs(unittest.TestCase):
 
     # Downlaod all GTFS from GTFS data-exchange web-site
     # and load them into a DAO.
