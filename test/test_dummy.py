@@ -26,7 +26,7 @@ from sqlalchemy.sql.functions import func
 from gtfslib.dao import Dao
 from gtfslib.model import CalendarDate, Route, Calendar, Stop, \
     Trip, StopTime
-from gtfslib.spatial import RectangularArea
+from gtfslib.spatial import RectangularArea, orthodromic_distance
 from gtfslib.utils import gtfstime
 
 
@@ -152,6 +152,8 @@ class TestDummyGtfs(unittest.TestCase):
         for trip in dao.trips(prefetch_stop_times=True):
             stopseq = 0
             n_stoptimes = len(trip.stop_times)
+            last_stop = None
+            distance = trip.stop_times[0].shape_dist_traveled
             last_stoptime = None
             last_interpolated_speed = None
             for stoptime in trip.stop_times:
@@ -164,6 +166,13 @@ class TestDummyGtfs(unittest.TestCase):
                     self.assertTrue(stoptime.departure_time is None)
                 else:
                     self.assertTrue(stoptime.departure_time is not None)
+                if last_stop is not None:
+                    distance += orthodromic_distance(last_stop, stoptime.stop)
+                last_stop = stoptime.stop
+                if trip.shape is not None:
+                    self.assertTrue(stoptime.shape_dist_traveled >= distance)
+                else:
+                    self.assertAlmostEqual(stoptime.shape_dist_traveled, distance, 1)
                 stopseq += 1
                 if stoptime.interpolated or (last_stoptime is not None and last_stoptime.interpolated):
                     dist = stoptime.shape_dist_traveled - last_stoptime.shape_dist_traveled
