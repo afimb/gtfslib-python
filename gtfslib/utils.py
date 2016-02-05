@@ -16,6 +16,8 @@
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
+from exceptions import ArithmeticError
+import bisect
 import logging
 import time
 
@@ -39,3 +41,46 @@ def fmttime(ssm):
     ssm %= 60
     s = ssm
     return "%d:%02d:%02d" % (h, m, s)
+
+class ContinousPiecewiseLinearFunc(object):
+
+    def __init__(self):
+        self._x = []
+        self._y = []
+        self._sorted = True
+
+    def append(self, x, y):
+        self._x.append(x)
+        self._y.append(y)
+        self._sorted = False
+
+    def interpolate(self, x):
+
+        if len(self._x) == 0:
+            raise ArithmeticError("Empty piecewise linear function")
+
+        if not self._sorted:
+            zipped = zip(self._x, self._y)
+            zipped.sort()
+            self._x = [ ax for (ax, ay) in zipped ]
+            self._y = [ ay for (ax, ay) in zipped ]
+            self._sorted = True
+
+        idx = bisect.bisect(self._x, x)
+        if idx == 0:
+            # Clamp to left
+            return self._y[0]
+        if idx == len(self._x):
+            # Clamp to right
+            return self._y[-1]
+        x1 = self._x[idx - 1]
+        x2 = self._x[idx]
+        y1 = self._y[idx - 1]
+        y2 = self._y[idx]
+        dx = x2 - x1
+        if dx < 1e-5:
+            print(y1)
+            print(y2)
+            return y1
+        dy = y2 - y1
+        return (1.0 * x - x1) * dy / dx + y1
