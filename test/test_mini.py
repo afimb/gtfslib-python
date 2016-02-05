@@ -81,6 +81,23 @@ class TestMiniGtfs(unittest.TestCase):
         self.assertTrue(a.agency_name == "Mini Agency")
         self.assertTrue(a.agency_lang == "en")
 
+    def test_dist_traveled(self):
+        dao = Dao(DAO_URL, sql_logging=SQL_LOG)
+        dao.load_gtfs(MINI_GTFS)
+
+        for trip in dao.trips():
+            # Assume no shapes for now
+            distance = 0.0
+            last_stop = None
+            for stoptime in trip.stop_times:
+                if last_stop is not None:
+                    distance += orthodromic_distance(last_stop, stoptime.stop)
+                last_stop = stoptime.stop
+                if trip.shape:
+                    self.assertTrue(stoptime.shape_dist_traveled >= distance)
+                else:
+                    self.assertAlmostEqual(stoptime.shape_dist_traveled, distance, 2)
+
     def test_hops(self):
         dao = Dao(DAO_URL, sql_logging=SQL_LOG)
         dao.load_gtfs(MINI_GTFS)
