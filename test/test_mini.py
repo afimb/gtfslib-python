@@ -14,6 +14,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
 from gtfslib.model import Trip
+from gtfslib.spatial import orthodromic_distance
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -26,7 +27,7 @@ from gtfslib.dao import Dao
 # This unit-test is highly dependent on the CONTENT of this GTFS.
 MINI_GTFS = "test/mini.gtfs.zip"
 # The Google sample GTFS
-SAMPLE_GTFS = "test/sample-feed.gtfs.zip"
+SAMPLE_GTFS = "test/sample-feed.zip"
 
 DAO_URL = ""
 # To unit-test with postgresql, create a db "gtfs" with user "gtfs" and uncomment the following line:
@@ -129,7 +130,7 @@ class TestMiniGtfs(unittest.TestCase):
 
     def test_sample_gtfs(self):
         dao = Dao(DAO_URL, sql_logging=SQL_LOG)
-        dao.load_gtfs(MINI_GTFS)
+        dao.load_gtfs(SAMPLE_GTFS)
         # Only test loading for now
 
 if __name__ == '__main__':
