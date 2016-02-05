@@ -19,13 +19,18 @@
 import logging
 
 from gtfslib.model import Agency, FeedInfo, Route, Calendar, CalendarDate, Stop, \
-    Trip, StopTime, Transfer
-from gtfslib.utils import timing, fmttime
-from gtfslib.spatial import DistanceCache
+    Trip, StopTime, Transfer, Shape, ShapePoint
+from gtfslib.spatial import DistanceCache, orthodromic_distance,\
+    orthodromic_seg_distance
+from gtfslib.utils import timing, fmttime, ContinousPiecewiseLinearFunc
+
 
 logger = logging.getLogger('libgtfs')
 
 DOW_NAMES = { 0: 'monday', 1: 'tuesday', 2: 'wednesday', 3: 'thursday', 4: 'friday', 5: 'saturday', 6: 'sunday' }
+
+# TODO Enable this when we have a cache
+ENABLE_SHAPE_DISTANCE = False
 
 def _toint(s, default_value=None):
     if s is None or len(s) == 0:
@@ -48,6 +53,103 @@ def _tofloat(s, default_value=None):
     if s is None or len(s) == 0:
         return default_value
     return float(s)
+
+class _OdometerShape(object):
+
+    def __init__(self, shape):
+        self._shape = shape
+        self._cache = {}
+        if all(pt.shape_dist_traveled != -999999 for pt in shape.points):
+            self._xdist = ContinousPiecewiseLinearFunc()
+        else:
+            self._xdist = None
+        # Normalize the shape here:
+        # 1) dist_traveled to meters
+        # 2) pt_seq to contiguous numbering from 0
+        ptseq = 0
+        distance_meters = 0.0
+        last_pt = None
+        for pt in shape.points:
+            if last_pt is not None:
+                # Note: we do not use distance cache, as most probably
+                # many of the points will be different from each other.
+                distance_meters += orthodromic_distance(last_pt, pt)
+            last_pt = pt
+            pt.shape_pt_sequence = ptseq
+            old_distance = pt.shape_dist_traveled
+            pt.shape_dist_traveled = distance_meters
+            # Remember the distance mapping for stop times
+            if self._xdist:
+                self._xdist.append(old_distance, pt.shape_dist_traveled)
+            ptseq += 1
+
+    def reset(self):
+        self._distance = 0
+        self._istart = 0
+        self._cache_cursor = self._cache
+
+    def dist_traveled(self, stop, old_dist_traveled):
+        if old_dist_traveled and self._xdist:
+            # Case 1: we have in the original data shape_dist_traveled
+            # We need to remap from the old scale to the new meter scale
+            return self._xdist.interpolate(old_dist_traveled)
+        else:
+            # Case 2: we do not have original shape_dist_traveled
+            # We need to determine ourselves where in the shape we lie
+            # TODO Implement a cache, this can be slow for lots of trips
+            # and the result is the same for the same pattern
+            min_dist = 1e20
+            best_i = self._istart
+            best_dist = 0
+            for i in range(self._istart, len(self._shape.points) - 1):
+                a = self._shape.points[i]
+                b = self._shape.points[i+1]
+                dist, pdist = orthodromic_seg_distance(stop, a, b)
+                if dist < min_dist:
+                    # TODO We can do probably better here, by taking into
+                    # account the max distance so far. There are pathological
+                    # cases with backtracking shapes where the best distance
+                    # is slightly better way further (for eg 0.01m) than at
+                    # the starting point (for eg 0.02m). In that case we should
+                    # obviously keep the first point instead of moving too fast
+                    # to the shape end.
+                    min_dist = dist
+                    best_i = i
+                    best_dist = a.shape_dist_traveled + pdist
+            if best_dist >= self._distance:
+                self._distance = best_dist
+            else:
+                # This can be harmless if the backtracking distance is small
+                logger.warn("Backtracking of %f m detected in shape %s for stop %s (%s) (%f,%f) at distance %f < %f m on segment #[%d-%d]" % (
+                        self._distance - best_dist, self._shape.shape_id, stop.stop_id, stop.stop_name, stop.stop_lat, stop.stop_lon, best_dist, self._distance, best_i, best_i+1))
+            self._istart = best_i
+            return self._distance
+
+class _Odometer(object):
+    _shapes = {}
+    _dcache = DistanceCache()
+
+    def normalize_and_register_shape(self, shape):
+        self._shapes[shape.shape_id] = _OdometerShape(shape)
+
+    def reset(self, shape_id):
+        self._distance = 0
+        self._last_stop = None
+        odoshp = self._shapes.get(shape_id, None)
+        if odoshp is not None:
+            odoshp.reset()
+
+    def dist_traveled(self, shape_id, stop, old_dist_traveled):
+        odoshp = self._shapes.get(shape_id, None)
+        if odoshp is not None and ENABLE_SHAPE_DISTANCE:
+            # We have a shape, use it
+            return odoshp.dist_traveled(stop, old_dist_traveled)
+        # We do not have shape, use straight-line distance between
+        # consecutive stops
+        if self._last_stop is not None:
+            self._distance += self._dcache.orthodromic_distance(self._last_stop, stop)
+        self._last_stop = stop
+        return self._distance
 
 @timing
 def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
@@ -86,13 +188,13 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         lon = _tofloat(sval.get('stop_lon'), None)
         if lat is None or lon is None:
             if lenient:
-                logger.error("Missing lat/lon for '%s', set to default (0,0)" % (stop, ))
+                logger.error("Missing lat/lon for '%s', set to default (0,0)" % (stop,))
                 if lat is None:
                     lat = 0
                 if lon is None:
                     lon = 0
             else:
-                raise ValueError("Missing mandatory lat/lon for '%s'." % (stop, ))
+                raise ValueError("Missing mandatory lat/lon for '%s'." % (stop,))
         sval['stop_lat'] = lat
         sval['stop_lon'] = lon
         # This field has been renamed for consistency
@@ -276,25 +378,56 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     dao.flush()
     logger.info("Imported %d stop times" % n_stoptimes)
 
+    logger.info("Importing shapes...")
+    n_shape_pts = 0
+    shapes = {}
+    for shpt in gtfs.shapes():
+        spval = vars(shpt)
+        shape_id = spval.get('shape_id')
+        pt_seq = _toint(spval.get('shape_pt_sequence'))
+        # This field is optional
+        dist_traveled = _tofloat(spval.get('shape_dist_traveled'), -999999)
+        lat = _tofloat(spval.get('shape_pt_lat'))
+        lon = _tofloat(spval.get('shape_pt_lon'))
+        n_shape_pts += 1
+        if n_shape_pts % 10000 == 0:
+            logger.info("%d shape points" % n_shape_pts)
+        shape = shapes.get(shape_id)
+        if shape is None:
+            shape = Shape(feed_id, shape_id)
+            shapes[shape_id] = shape
+        shape_point = ShapePoint(feed_id, shape_id, pt_seq, lat, lon, dist_traveled)
+        shape.points.append(shape_point)
+    dao.add_all(shapes.values())
+    dao.flush()
+    logger.info("Imported %d shapes with %d points" % (len(shapes), n_shape_pts))
+
+    logger.info("Normalizing shapes...")
+    nshapes = 0
+    odometer = _Odometer()
+    for shape in dao.shapes(fltr=Shape.feed_id == feed_id, prefetch_points=True):
+        # Shape will be registered in the normalize
+        odometer.normalize_and_register_shape(shape)
+        nshapes += 1
+        if nshapes % 100 == 0:
+            logger.info("%d shapes" % nshapes)
+            dao.flush()
+    dao.flush()
+    logger.info("Normalized %d shapes" % len(shapes))
+
     logger.info("Normalizing trips...")
     ntrips = 0
-    dcache = DistanceCache()
     # TODO Disabled batching for now, replace by batching in python using our list of trip IDs.
     for trip in dao.trips(fltr=Trip.feed_id == feed_id, prefetch_stop_times=True, prefetch_stops=True):
         stopseq = 0
         n_stoptimes = len(trip.stop_times)
-        distance = 0
-        last_stop = None
         last_stoptime_with_time = None
         to_interpolate = []
+        odometer.reset(trip.shape_id)
         for stoptime in trip.stop_times:
-            # TODO Handle shapes if present
-            # TODO Interpolate missing departure/arrival times
-            if last_stop is not None:
-                distance += dcache.orthodromic_distance(last_stop, stoptime.stop)
-            last_stop = stoptime.stop
             stoptime.stop_sequence = stopseq
-            stoptime.shape_dist_traveled = distance
+            stoptime.shape_dist_traveled = odometer.dist_traveled(trip.shape_id, stoptime.stop,
+                        stoptime.shape_dist_traveled if stoptime.shape_dist_traveled != -999999 else None)
             if stopseq == 0:
                 # Force first arrival time to NULL
                 stoptime.arrival_time = None
