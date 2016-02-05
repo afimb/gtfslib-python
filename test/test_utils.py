@@ -29,7 +29,7 @@ class TestUtils(unittest.TestCase):
         catched = False
         try:
             self.assertAlmostEqual(f.interpolate(0), 0, 3)
-        except ArithmeticError:
+        except:
             catched = True
         self.assertTrue(catched)
 
