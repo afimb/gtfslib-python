@@ -274,6 +274,52 @@ class StopTime(object):
         return "<%s(id=%s/%s/%s, %s)>" % (
                 self.__class__.__name__, self.feed_id, self.trip_id, self.stop_sequence, _public_vars(self))
 
+class Shape(object):
+
+    def __init__(self, feed_id, shape_id):
+        self.feed_id = feed_id
+        self.shape_id = shape_id
+
+    def __repr__(self):
+        return "<%s(id=%s/%s)>" % (
+                self.__class__.__name__, self.feed_id, self.shape_id)
+
+@total_ordering
+class ShapePoint(object):
+
+    def __init__(self, feed_id, shape_id, shape_pt_sequence, shape_pt_lat, shape_pt_lon,
+                shape_dist_traveled):
+        self.feed_id = feed_id
+        self.shape_id = shape_id
+        self.shape_pt_sequence = shape_pt_sequence
+        self.shape_pt_lat = shape_pt_lat
+        self.shape_pt_lon = shape_pt_lon
+        self.shape_dist_traveled = shape_dist_traveled
+
+    def lat(self):
+        return self.shape_pt_lat
+
+    def lon(self):
+        return self.shape_pt_lon
+
+    def __lt__(self, other):
+        return self.shape_pt_sequence < other.shape_pt_sequence
+
+    def __eq__(self, other):
+        if not isinstance(other, ShapePoint):
+            return False
+        return _generic_eq(self._primary_keys(), other._primary_keys())
+
+    def __hash__(self):
+        return _generic_hash(self._primary_keys())
+
+    def _primary_keys(self):
+        return (self.feed_id, self.shape_id, self.shape_pt_sequence)
+
+    def __repr__(self):
+        return "<%s(id=%s/%s/%s, %s)>" % (
+                self.__class__.__name__, self.feed_id, self.shape_id, self.shape_pt_sequence, _public_vars(self))
+
 # ---------------------------
 # Some private helper methods
 
