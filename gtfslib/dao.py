@@ -25,7 +25,7 @@ from sqlalchemy.orm.session import sessionmaker
 from gtfslib.converter import _convert_gtfs_model
 from gtfslib.csvgtfs import Gtfs, ZipFileSource
 from gtfslib.model import FeedInfo, Agency, Route, Calendar, CalendarDate, Stop, \
-    Trip, StopTime, Transfer
+    Trip, StopTime, Transfer, Shape
 from gtfslib.orm import _Orm
 
 
@@ -283,6 +283,26 @@ class Dao(object):
             if prefetch_stop_times:
                 loadopt = loadopt.subqueryload('stop_times')
             query = query.options(loadopt)
+        return query.all()
+
+    def shape(self, shape_id, feed_id="", prefetch_shape_points=True):
+        query = self._session.query(Shape)
+        if prefetch_shape_points:
+            query = query.options(subqueryload('points'))
+        return query.get((feed_id, shape_id))
+
+    def shapes(self, fltr=None, trip_fltr=None, route_fltr=None, prefetch_points=True):
+        query = self._session.query(Shape)
+        if fltr is not None:
+            query = query.filter(fltr)
+        if trip_fltr is not None or route_fltr is not None:
+            query = query.join(Trip)
+        if trip_fltr is not None:
+            query = query.filter(trip_fltr)
+        if route_fltr is not None:
+            query = query.join(Route).filter(route_fltr)
+        if prefetch_points:
+            query = query.options(subqueryload('points'))
         return query.all()
 
     """
