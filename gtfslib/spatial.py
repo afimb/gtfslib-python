@@ -29,6 +29,13 @@ def orthodromic_distance(a, b):
     c = 2 * math.asin(math.sqrt(math.sin(dlat / 2) ** 2 + math.cos(lat_a) * math.cos(lat_b) * math.sin(dlon / 2) ** 2))
     return c * EARTH_RADIUS
 
+"""
+@return A 2-tuple composed of
+            1) the distance in meter from the point p to the segment [ab],
+            2) the distance in meter from a to the clamped projection of p on [ab].
+            The clamped projection is the standard projected point if it lies on the
+            segment, or one of the extremities of the segment if not.
+"""
 def orthodromic_seg_distance(p, a, b):
     # Use approximate equirectangular projection
     x_p = math.radians(p.lat())
@@ -40,6 +47,8 @@ def orthodromic_seg_distance(p, a, b):
     if l2 == 0:
         # Pathological d(AB)=0 case, d = d(PA)
         d2 = (x_p - x_a) * (x_p - x_a) + (y_p - y_a) * (y_p - y_a)
+        # Any value of t will do
+        t = 0
     else:
         # Compute t, linear coordinate of C in the [AB] vector basis
         # and where C is the projection of P on line (AB).
@@ -47,15 +56,19 @@ def orthodromic_seg_distance(p, a, b):
         if t < 0:
             # C outside [AB] on A side: d = d(PA)
             d2 = (x_p - x_a) * (x_p - x_a) + (y_p - y_a) * (y_p - y_a)
+            # Clamp
+            t = 0
         elif t > 1:
             # C outside [AB] on B side: d = d(PB)
             d2 = (x_p - x_b) * (x_p - x_b) + (y_p - y_b) * (y_p - y_b)
+            # Clamp
+            t = 1
         else:
             # C inside [AB]: d = d(PC), C = A + t.B
             xC = x_a + t * (x_b - x_a)
             yC = y_a + t * (y_b - y_a)
             d2 = (x_p - xC) * (x_p - xC) + (y_p - yC) * (y_p - yC)
-    return EARTH_RADIUS * math.sqrt(d2)
+    return EARTH_RADIUS * math.sqrt(d2), EARTH_RADIUS * math.sqrt(l2) * t
 
 class DistanceCache(object):
     
