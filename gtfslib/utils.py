@@ -16,7 +16,6 @@
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
-from exceptions import ArithmeticError
 import bisect
 import logging
 import time
@@ -57,11 +56,11 @@ class ContinousPiecewiseLinearFunc(object):
     def interpolate(self, x):
 
         if len(self._x) == 0:
-            raise ArithmeticError("Empty piecewise linear function")
+            raise Exception("Empty piecewise linear function")
 
         if not self._sorted:
             zipped = zip(self._x, self._y)
-            zipped.sort()
+            zipped = sorted(zipped)
             self._x = [ ax for (ax, ay) in zipped ]
             self._y = [ ay for (ax, ay) in zipped ]
             self._sorted = True
