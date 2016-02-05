@@ -14,7 +14,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
 from gtfslib.model import Trip
-from gtfslib.spatial import orthodromic_distance
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -26,8 +25,6 @@ from gtfslib.dao import Dao
 # Location of mini.gtfs.zip.
 # This unit-test is highly dependent on the CONTENT of this GTFS.
 MINI_GTFS = "test/mini.gtfs.zip"
-# The Google sample GTFS
-SAMPLE_GTFS = "test/sample-feed.zip"
 
 DAO_URL = ""
 # To unit-test with postgresql, create a db "gtfs" with user "gtfs" and uncomment the following line:
@@ -81,23 +78,6 @@ class TestMiniGtfs(unittest.TestCase):
         self.assertTrue(a.agency_name == "Mini Agency")
         self.assertTrue(a.agency_lang == "en")
 
-    def test_dist_traveled(self):
-        dao = Dao(DAO_URL, sql_logging=SQL_LOG)
-        dao.load_gtfs(MINI_GTFS)
-
-        for trip in dao.trips():
-            # Assume no shapes for now
-            distance = 0.0
-            last_stop = None
-            for stoptime in trip.stop_times:
-                if last_stop is not None:
-                    distance += orthodromic_distance(last_stop, stoptime.stop)
-                last_stop = stoptime.stop
-                if trip.shape:
-                    self.assertTrue(stoptime.shape_dist_traveled >= distance)
-                else:
-                    self.assertAlmostEqual(stoptime.shape_dist_traveled, distance, 2)
-
     def test_hops(self):
         dao = Dao(DAO_URL, sql_logging=SQL_LOG)
         dao.load_gtfs(MINI_GTFS)
@@ -144,11 +124,6 @@ class TestMiniGtfs(unittest.TestCase):
         for st1, st2 in hops:
             self.assertTrue(st1.stop_sequence + 2 == st2.stop_sequence)
             self.assertTrue(st1.trip == st2.trip)
-
-    def test_sample_gtfs(self):
-        dao = Dao(DAO_URL, sql_logging=SQL_LOG)
-        dao.load_gtfs(SAMPLE_GTFS)
-        # Only test loading for now
 
 if __name__ == '__main__':
     unittest.main()

@@ -26,7 +26,7 @@ from sqlalchemy.sql.functions import func
 from gtfslib.dao import Dao
 from gtfslib.model import CalendarDate, Route, Calendar, Stop, \
     Trip, StopTime
-from gtfslib.spatial import RectangularArea, orthodromic_distance
+from gtfslib.spatial import RectangularArea
 from gtfslib.utils import gtfstime
 
 
@@ -147,46 +147,6 @@ class TestDummyGtfs(unittest.TestCase):
             n += 1
         self.assertTrue(n > 30)
 
-        # Check normalization and interpolation
-        n = 0
-        for trip in dao.trips(prefetch_stop_times=True):
-            stopseq = 0
-            n_stoptimes = len(trip.stop_times)
-            last_stop = None
-            distance = trip.stop_times[0].shape_dist_traveled
-            last_stoptime = None
-            last_interpolated_speed = None
-            for stoptime in trip.stop_times:
-                self.assertTrue(stoptime.stop_sequence == stopseq)
-                if stopseq == 0:
-                    self.assertTrue(stoptime.arrival_time is None)
-                else:
-                    self.assertTrue(stoptime.arrival_time is not None)
-                if stopseq == n_stoptimes - 1:
-                    self.assertTrue(stoptime.departure_time is None)
-                else:
-                    self.assertTrue(stoptime.departure_time is not None)
-                if last_stop is not None:
-                    distance += orthodromic_distance(last_stop, stoptime.stop)
-                last_stop = stoptime.stop
-                if trip.shape is not None:
-                    self.assertTrue(stoptime.shape_dist_traveled >= distance)
-                else:
-                    self.assertAlmostEqual(stoptime.shape_dist_traveled, distance, 1)
-                stopseq += 1
-                if stoptime.interpolated or (last_stoptime is not None and last_stoptime.interpolated):
-                    dist = stoptime.shape_dist_traveled - last_stoptime.shape_dist_traveled
-                    time = stoptime.arrival_time - last_stoptime.departure_time
-                    speed = dist * 1.0 / time
-                    if last_interpolated_speed is not None:
-                        self.assertAlmostEqual(speed, last_interpolated_speed, 2)
-                    last_interpolated_speed = speed
-                    n += 1
-                if not stoptime.interpolated:
-                    last_interpolated_speed = None
-                last_stoptime = stoptime
-        self.assertTrue(n >= 10)
-
     def test_non_overlapping_feeds(self):
         dao = Dao(DAO_URL, sql_logging=SQL_LOG)
         # Load twice the same data under two distinct namespaces
@@ -297,29 +257,6 @@ class TestDummyGtfs(unittest.TestCase):
             self.assertTrue(date >= from_date.as_date())
             self.assertTrue(date <= to_date.as_date())
             self.assertTrue(trip_count > 0)
-
-    def test_hops(self):
-        dao = Dao(DAO_URL, sql_logging=SQL_LOG)
-        dao.load_gtfs(DUMMY_GTFS)
-
-        # Get all hops
-        hops = dao.hops()
-        nhops = 0
-        for st1, st2 in hops:
-            self.assertTrue(st1.stop_sequence + 1 == st2.stop_sequence)
-            self.assertTrue(st1.trip == st2.trip)
-            nhops += 1
-
-        # Get hops with a delta of 2
-        hops = dao.hops(delta=2)
-        nhops2 = 0
-        for st1, st2 in hops:
-            self.assertTrue(st1.stop_sequence + 2 == st2.stop_sequence)
-            self.assertTrue(st1.trip == st2.trip)
-            nhops2 += 1
-        ntrips = len(dao.trips())
-        # Assume all trips have len > 2
-        self.assertTrue(nhops == nhops2 + ntrips)
 
 if __name__ == '__main__':
     unittest.main()
