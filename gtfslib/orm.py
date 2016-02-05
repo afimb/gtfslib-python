@@ -24,7 +24,7 @@ from sqlalchemy.sql.schema import Column, MetaData, Table, ForeignKey, \
 from sqlalchemy.sql.sqltypes import String, Integer, Float, Date, Boolean
 
 from gtfslib.model import FeedInfo, Agency, Stop, Route, Calendar, CalendarDate, \
-    Trip, StopTime, Transfer
+    Trip, StopTime, Transfer, Shape, ShapePoint
 
 
 # ORM Mappings
@@ -159,16 +159,46 @@ class _Orm(object):
         'calendar' : relationship(Calendar, backref=backref('dates', cascade="all,delete-orphan"))
     })
 
-    _stop_seq_column = Column('stop_sequence', Integer, primary_key=True)
+    _shape_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
+    _shape_id_column = Column('shape_id', String, primary_key=True)
+    _shape_mapper = Table('shapes', _metadata,
+                _shape_feed_id_column,
+                _shape_id_column
+                )
+    mapper(Shape, _shape_mapper, properties={
+        'feed' : relationship(FeedInfo, backref=backref('shapes', cascade="all,delete-orphan"),
+                              primaryjoin=_feedinfo_id_column == foreign(_shape_feed_id_column))
+    })
+
+    _shape_pt_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
+    _shape_pt_shape_id_column = Column('shape_id', String, primary_key=True)
+    _shape_pt_seq_column = Column('shape_pt_sequence', Integer, primary_key=True)
+    _shape_pt_mapper = Table('shape_pts', _metadata,
+                _shape_pt_feed_id_column,
+                _shape_pt_shape_id_column,
+                _shape_pt_seq_column,
+                Column('shape_dist_traveled', Float, nullable=False),
+                Column('shape_pt_lat', Float, nullable=False),
+                Column('shape_pt_lon', Float, nullable=False),
+                ForeignKeyConstraint(['feed_id', 'shape_id'], ['shapes.feed_id', 'shapes.shape_id']),
+                Index('idx_shape_pt_shape', 'feed_id', 'shape_id'))
+    mapper(ShapePoint, _shape_pt_mapper, properties={
+        # Note: here we specify foreign() on shape_pt feed_id column as there is no ownership relation of feed to shape_pts
+        'shape' : relationship(Shape, backref=backref('points', order_by=_shape_pt_seq_column, cascade="all,delete-orphan"),
+                              primaryjoin=(_shape_id_column == foreign(_shape_pt_shape_id_column)) & (_shape_feed_id_column == foreign(_shape_pt_feed_id_column)))
+    })
+
     _trip_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
     _trip_id_column = Column('trip_id', String, primary_key=True)
     _trip_route_id_column = Column('route_id', String, nullable=False)
     _trip_calendar_id_column = Column('service_id', String, nullable=False)
+    _trip_shape_id_column = Column('shape_id', String, nullable=True)
     _trip_mapper = Table('trips', _metadata,
                 _trip_feed_id_column,
                 _trip_id_column,
                 _trip_route_id_column,
                 _trip_calendar_id_column,
+                _trip_shape_id_column,
                 Column('wheelchair_accessible', Integer, nullable=False),
                 Column('bikes_allowed', Integer, nullable=False),
                 Column('exact_times', Integer, nullable=False),
@@ -179,6 +209,7 @@ class _Orm(object):
                 Column('block_id', String),
                 ForeignKeyConstraint(['feed_id', 'route_id'], ['routes.feed_id', 'routes.route_id']),
                 ForeignKeyConstraint(['feed_id', 'service_id'], ['calendar.feed_id', 'calendar.service_id']),
+                ForeignKeyConstraint(['feed_id', 'shape_id'], ['shapes.feed_id', 'shapes.shape_id']),
                 Index('idx_trips_route', 'feed_id', 'route_id'),
                 Index('idx_trips_service', 'feed_id', 'service_id'))
     mapper(Trip, _trip_mapper, properties={
@@ -187,11 +218,14 @@ class _Orm(object):
         'route' : relationship(Route, backref=backref('trips', cascade="all,delete-orphan"),
                                primaryjoin=(_route_id_column == foreign(_trip_route_id_column)) & (_route_feed_id_column == _trip_feed_id_column)),
         'calendar' : relationship(Calendar, backref=backref('trips', cascade="all,delete-orphan"),
-                                  primaryjoin=(_calendar_id_column == foreign(_trip_calendar_id_column)) & (_calendar_feed_id_column == _trip_feed_id_column))
+                                  primaryjoin=(_calendar_id_column == foreign(_trip_calendar_id_column)) & (_calendar_feed_id_column == _trip_feed_id_column)),
+        'shape' : relationship(Shape, backref=backref('trips', cascade="all,delete-orphan"),
+                                  primaryjoin=(_shape_id_column == foreign(_trip_shape_id_column)) & (_shape_feed_id_column == _trip_feed_id_column))
     })
 
     _stop_times_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
     _stop_times_trip_id_column = Column('trip_id', String, primary_key=True)
+    _stop_seq_column = Column('stop_sequence', Integer, primary_key=True)
     _stop_times_stop_id_column = Column('stop_id', String, nullable=False)
     _stop_times_mapper = Table('stop_times', _metadata,
                 _stop_times_feed_id_column,
