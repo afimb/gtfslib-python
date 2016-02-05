@@ -78,9 +78,7 @@ class ContinousPiecewiseLinearFunc(object):
         y1 = self._y[idx - 1]
         y2 = self._y[idx]
         dx = x2 - x1
-        if dx < 1e-5:
-            print(y1)
-            print(y2)
-            return y1
+        # Please note that by construction dx can never be null
+        # bisect always return the last item in case several are equals
         dy = y2 - y1
         return (1.0 * x - x1) * dy / dx + y1
