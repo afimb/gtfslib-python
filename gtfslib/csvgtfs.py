@@ -85,7 +85,8 @@ class Gtfs(object):
             dict(obj='GtfsCalendar', getter='calendars', table='calendar.txt', optional=True),
             dict(obj='GtfsCalendarDate', getter='calendar_dates', table='calendar_dates.txt', optional=True),
             dict(obj='GtfsTransfer', getter='transfers', table='transfers.txt', optional=True),
-            dict(obj='GtfsFrequency', getter='frequencies', table='frequencies.txt', optional=True)
+            dict(obj='GtfsFrequency', getter='frequencies', table='frequencies.txt', optional=True),
+            dict(obj='GtfsShape', getter='shapes', table='shapes.txt', optional=True)
     ]
     
     def __init__(self, filesource):
