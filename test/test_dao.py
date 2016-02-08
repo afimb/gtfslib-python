@@ -22,7 +22,7 @@ import unittest
 
 from gtfslib.dao import Dao
 from gtfslib.model import CalendarDate, FeedInfo, Agency, Route, Calendar, Stop, \
-    Trip, StopTime, Transfer, Shape, ShapePoint
+    Trip, StopTime, Transfer, Shape, ShapePoint, Zone
 
 
 class TestDao(unittest.TestCase):
@@ -243,6 +243,29 @@ class TestDao(unittest.TestCase):
         self.assertTrue(len(t.shape.points) == 5)
         t = dao.trip("T2")
         self.assertTrue(t.shape == None)
+
+    def test_zones(self):
+        dao = Dao()
+        f1 = FeedInfo("")
+        z1 = Zone("", "Z1")
+        s1 = Stop("", "S1", "Stop 1", 45.0, 0.0)
+        s2 = Stop("", "S2", "Stop 2", 45.1, 0.1, zone_id="Z1")
+        s3 = Stop("", "S3", "Stop 3", 45.2, 0.2)
+        s3.zone = z1
+        dao.add_all([ f1, z1, s1, s2, s3 ])
+        dao.commit()
+
+        self.assertTrue(len(dao.zones()) == 1)
+        z = dao.zone("Z1")
+        self.assertTrue(len(z.stops) == 2)
+        for stop in z.stops:
+            self.assertTrue(stop.zone == z)
+        s = dao.stop("S1")
+        self.assertTrue(s.zone == None)
+        s = dao.stop("S2")
+        self.assertTrue(s.zone == z)
+        s = dao.stop("S3")
+        self.assertTrue(s.zone == z)
 
 if __name__ == '__main__':
     unittest.main()

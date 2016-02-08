@@ -121,8 +121,17 @@ class TestGtfs(unittest.TestCase):
                 self.assertTrue(point.shape_pt_sequence == ptseq)
                 ptseq += 1
 
+        # Check zone-stop relationship
+        for zone in dao.zones(prefetch_stops=True):
+            for stop in zone.stops:
+                self.assertTrue(stop.zone == zone)
+        for stop in dao.stops():
+            if stop.zone:
+                self.assertTrue(stop in stop.zone.stops)
+
     def test_all_gtfs(self):
         for gtfs in GTFS_LIST:
+            print("Testing %s" % gtfs)
             self._test_one_gtfs(gtfs)
 
 if __name__ == '__main__':

@@ -115,6 +115,14 @@ class TestDummyGtfs(unittest.TestCase):
             for stop in station.sub_stops:
                 self.assertTrue(stop.parent_station == station)
 
+        # Check zones
+        z_inexistant = dao.zone("ZX")
+        self.assertTrue(z_inexistant is None)
+        z1 = dao.zone("Z1")
+        self.assertEquals(16, len(z1.stops))
+        z2 = dao.zone("Z2")
+        self.assertEquals(4, len(z2.stops))
+
         # Check transfers
         transfers = dao.transfers()
         self.assertTrue(len(transfers) == 3)
