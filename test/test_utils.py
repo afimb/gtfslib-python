@@ -13,7 +13,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
-from gtfslib.utils import ContinousPiecewiseLinearFunc
+from gtfslib.utils import ContinousPiecewiseLinearFunc, group_items
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -71,6 +71,14 @@ class TestUtils(unittest.TestCase):
         self.assertAlmostEqual(f.interpolate(15), 9500.0, 6)
         self.assertAlmostEqual(f.interpolate(40), 10020.0, 3)
         self.assertAlmostEqual(f.interpolate(1010), 10980.0, 3)
+
+    def test_group_items(self):
+        for alist in [ range(0), range(5), range(10), range(15), range(100) ]:
+            alist2 = []
+            for aa in group_items(alist, 10):
+                for a in aa:
+                    alist2.append(a)
+            self.assertTrue(alist == alist2)
 
 if __name__ == '__main__':
     unittest.main()
