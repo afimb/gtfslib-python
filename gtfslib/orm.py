@@ -24,7 +24,7 @@ from sqlalchemy.sql.schema import Column, MetaData, Table, ForeignKey, \
 from sqlalchemy.sql.sqltypes import String, Integer, Float, Date, Boolean
 
 from gtfslib.model import FeedInfo, Agency, Stop, Route, Calendar, CalendarDate, \
-    Trip, StopTime, Transfer, Shape, ShapePoint, Zone
+    Trip, StopTime, Transfer, Shape, ShapePoint, Zone, FareAttribute, FareRule
 
 
 # ORM Mappings
@@ -273,6 +273,47 @@ class _Orm(object):
         'stop' : relationship(Stop, backref=backref('stop_times', cascade="all,delete-orphan"),
                               primaryjoin=(_stop_id_column == foreign(_stop_times_stop_id_column)) & (_stop_feed_id_column == _stop_times_feed_id_column)),
 
+    })
+
+    _fareattr_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
+    _fareattr_id_column = Column('fare_id', String, primary_key=True)
+    _fareattr_mapper = Table('fare_attributes', _metadata,
+                _fareattr_feed_id_column,
+                _fareattr_id_column,
+                Column('price', Float, nullable=False),
+                Column('currency_type', String, nullable=False),
+                Column('payment_method', Integer, nullable=False),
+                Column('transfers', Integer),
+                Column('transfer_duration', Integer))
+    mapper(FareAttribute, _fareattr_mapper, properties={
+        'feed' : relationship(FeedInfo, backref=backref('fare_attributes', cascade="all,delete-orphan"),
+                              primaryjoin=_feedinfo_id_column == foreign(_fareattr_feed_id_column))
+    })
+
+    _farerule_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
+    _farerule_id_column = Column('fare_id', String, primary_key=True)
+    _farerule_route_id_column = Column('route_id', String, primary_key=True, nullable=True)
+    _farerule_origin_id_column = Column('origin_id', String, primary_key=True, nullable=True)
+    _farerule_destination_id_column = Column('destination_id', String, primary_key=True, nullable=True)
+    _farerule_contains_id_column = Column('contains_id', String, primary_key=True, nullable=True)
+    _farerule_mapper = Table('fare_rules', _metadata,
+                _farerule_feed_id_column,
+                _farerule_id_column,
+                _farerule_route_id_column,
+                _farerule_origin_id_column,
+                _farerule_destination_id_column,
+                _farerule_contains_id_column,
+                ForeignKeyConstraint(['feed_id', 'fare_id'], ['fare_attributes.feed_id', 'fare_attributes.fare_id']))
+    mapper(FareRule, _farerule_mapper, properties={
+        'fare_attribute' : relationship(FareAttribute, backref=backref('fare_rules', cascade="all,delete-orphan")),
+        'route' : relationship(Route, backref=backref('fare_rules', cascade="all,delete-orphan"),
+                        primaryjoin=(_route_id_column == foreign(_farerule_route_id_column)) & (_route_feed_id_column == _farerule_feed_id_column)),
+        'origin' : relationship(Zone, backref=backref('origin_fare_rules', cascade="all,delete-orphan"),
+                        primaryjoin=(_zone_id_column == foreign(_farerule_origin_id_column)) & (_zone_feed_id_column == _farerule_feed_id_column)),
+        'destination' : relationship(Zone, backref=backref('destination_fare_rules', cascade="all,delete-orphan"),
+                        primaryjoin=(_zone_id_column == foreign(_farerule_destination_id_column)) & (_zone_feed_id_column == _farerule_feed_id_column)),
+        'contains' : relationship(Zone, backref=backref('contains_fare_rules', cascade="all,delete-orphan"),
+                        primaryjoin=(_zone_id_column == foreign(_farerule_contains_id_column)) & (_zone_feed_id_column == _farerule_feed_id_column))
     })
 
     def __init__(self, engine):
