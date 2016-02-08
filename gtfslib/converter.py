@@ -54,6 +54,11 @@ def _tofloat(s, default_value=None):
         return default_value
     return float(s)
 
+def _todate(s, default_value=None):
+    if s is None or len(s) == 0:
+        return default_value
+    return CalendarDate.fromYYYYMMDD(s).as_date()
+
 class _CacheEntry(object):
 
     def __init__(self, distance):
@@ -191,9 +196,25 @@ class _Odometer(object):
 @timing
 def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     
-    feedinfo2 = FeedInfo(feed_id)
-    dao.add(feedinfo2)
+    feedinfo2 = None
     logger.info("Importing feed ID '%s'" % feed_id)
+    n_feedinfo = 0
+    for feedinfo in gtfs.feedinfo():
+        n_feedinfo += 1
+        if n_feedinfo > 1:
+            logger.error("Feed info should be unique if defined. Taking first one." % (n_feedinfo))
+            break
+        fval = vars(feedinfo)
+        # TODO Automatically compute from calendar range if missing?
+        fval['feed_start_date'] = _todate(fval.get('feed_start_date'))
+        fval['feed_end_date'] = _todate(fval.get('feed_end_date'))
+        feedinfo2 = FeedInfo(feed_id, **fval)
+    if feedinfo2 is None:
+        # Optional, generate empty feed info
+        feedinfo2 = FeedInfo(feed_id)
+    dao.add(feedinfo2)
+    dao.flush()
+    logger.info("Imported %d feedinfo" % n_feedinfo)
 
     logger.info("Importing agencies...")
     n_agencies = 0
