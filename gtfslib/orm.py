@@ -38,7 +38,15 @@ class _Orm(object):
     _agency_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
     _route_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
     _feedinfo_mapper = Table('feed_info', _metadata,
-                _feedinfo_id_column)
+                _feedinfo_id_column,
+                Column('feed_publisher_name', String),
+                Column('feed_publisher_url', String),
+                Column('feed_contact_email', String), # Non-standard (yet) field
+                Column('feed_contact_url', String), # Non-standard (yet) field
+                Column('feed_lang', String),
+                Column('feed_start_date', Date),
+                Column('feed_end_date', Date),
+                Column('feed_version', String))
     mapper(FeedInfo, _feedinfo_mapper, properties={
     })
     
