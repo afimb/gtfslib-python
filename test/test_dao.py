@@ -22,7 +22,7 @@ import unittest
 
 from gtfslib.dao import Dao
 from gtfslib.model import CalendarDate, FeedInfo, Agency, Route, Calendar, Stop, \
-    Trip, StopTime, Transfer, Shape, ShapePoint, Zone
+    Trip, StopTime, Transfer, Shape, ShapePoint, Zone, FareAttribute, FareRule
 
 
 class TestDao(unittest.TestCase):
@@ -266,6 +266,42 @@ class TestDao(unittest.TestCase):
         self.assertTrue(s.zone == z)
         s = dao.stop("S3")
         self.assertTrue(s.zone == z)
+
+    def test_fares(self):
+        dao = Dao()
+        f1 = FeedInfo("")
+        a1 = Agency("", "A1", "Agency 1", agency_url="http://www.agency.fr/", agency_timezone="Europe/Paris")
+        r1 = Route("", "R1", "A1", 3, route_short_name="R1", route_long_name="Route 1")
+        r2 = Route("", "R2", "A1", 3, route_short_name="R2", route_long_name="Route 2")
+        z1 = Zone("", "Z1")
+        z2 = Zone("", "Z2")
+        fare1 = FareAttribute("", "F1", 1.0, "EUR", FareAttribute.PAYMENT_ONBOARD, None, None)
+        fare2 = FareAttribute("", "F2", 2.0, "EUR", FareAttribute.PAYMENT_BEFOREBOARDING, 3, 3600)
+        rule1 = FareRule("", "F1", route_id="R1")
+        rule2 = FareRule("", "F1", origin_id="Z1", destination_id="Z2")
+        dao.add_all([ f1, a1, r1, r2, z1, z2, fare1, fare2, rule1, rule2 ])
+        dao.commit()
+
+        self.assertTrue(len(dao.fare_attributes()) == 2)
+        self.assertTrue(len(dao.fare_rules(fltr=(FareRule.route == r1))) == 1)
+        self.assertTrue(len(dao.fare_rules(fltr=(FareRule.route == r2))) == 0)
+        self.assertTrue(len(dao.fare_rules(fltr=(FareRule.origin == z1))) == 1)
+        fare = dao.fare_attribute("F1")
+        self.assertTrue(len(fare.fare_rules) == 2)
+        fare = dao.fare_attribute("F2")
+        self.assertTrue(len(fare.fare_rules) == 0)
+
+        # Test equivalence and hash on primary keys for rule
+        fr1a = FareRule("", "F1", route_id="R", origin_id="ZO", destination_id="ZD", contains_id=None)
+        fr1b = FareRule("", "F1", route_id="R", origin_id="ZO", destination_id="ZD", contains_id=None)
+        fr2 = FareRule("", "F1", route_id="R", origin_id="ZO", destination_id=None, contains_id="ZD")
+        ruleset = set()
+        ruleset.add(fr1a)
+        ruleset.add(fr2)
+        ruleset.add(fr1b)
+        self.assertTrue(len(ruleset) == 2)
+        self.assertTrue(fr1a == fr1b)
+        self.assertTrue(fr1a != fr2)
 
 if __name__ == '__main__':
     unittest.main()
