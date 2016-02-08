@@ -89,7 +89,9 @@ class Gtfs(object):
             dict(obj='GtfsCalendarDate', getter='calendar_dates', table='calendar_dates.txt', optional=True),
             dict(obj='GtfsTransfer', getter='transfers', table='transfers.txt', optional=True),
             dict(obj='GtfsFrequency', getter='frequencies', table='frequencies.txt', optional=True),
-            dict(obj='GtfsShape', getter='shapes', table='shapes.txt', optional=True)
+            dict(obj='GtfsShape', getter='shapes', table='shapes.txt', optional=True),
+            dict(obj='GtfsFareAttribute', getter='fare_attributes', table='fare_attributes.txt', optional=True),
+            dict(obj='GtfsFareRule', getter='fare_rules', table='fare_rules.txt', optional=True)
     ]
     
     def __init__(self, filesource):
