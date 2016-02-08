@@ -78,7 +78,7 @@ class TestUtils(unittest.TestCase):
             for aa in group_items(alist, 10):
                 for a in aa:
                     alist2.append(a)
-            self.assertTrue(alist == alist2)
+            self.assertTrue(list(alist) == alist2)
 
 if __name__ == '__main__':
     unittest.main()
