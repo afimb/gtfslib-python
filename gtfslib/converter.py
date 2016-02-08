@@ -288,6 +288,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         tval = vars(transfer)
         from_stop_id = tval.get('from_stop_id')
         to_stop_id = tval.get('to_stop_id')
+        tval['transfer_type'] = _toint(tval.get('transfer_type'), 0)
         for stop_id in (from_stop_id, to_stop_id):
             if stop_id not in station_ids and stop_id not in stop_ids:
                 if lenient:
