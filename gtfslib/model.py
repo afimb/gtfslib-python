@@ -24,8 +24,10 @@ from functools import total_ordering
 
 class FeedInfo(object):
     
-    def __init__(self, feed_id):
+    def __init__(self, feed_id, **kwargs):
         self.feed_id = feed_id
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
 
     def __repr__(self):
         return "<%s(id=%s)>" % (
