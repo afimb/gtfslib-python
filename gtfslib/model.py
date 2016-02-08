@@ -111,10 +111,16 @@ class Transfer(object):
                 self.__class__.__name__, self.feed_id, self.from_stop_id, self.to_stop_id, _public_vars(self))
 
 class Route(object):
-    
-    # TODO types
+
+    TYPE_TRAM = 0
+    TYPE_SUBWAY = 1
+    TYPE_RAIL = 2
     TYPE_BUS = 3
-    
+    TYPE_FERRY = 4
+    TYPE_CABLECAR = 5
+    TYPE_GONDOLA = 6
+    TYPE_FUNICULAR = 7
+
     def __init__(self, feed_id, route_id, agency_id, route_type, **kwargs):
         self.feed_id = feed_id
         self.route_id = route_id
