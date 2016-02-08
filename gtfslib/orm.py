@@ -24,7 +24,7 @@ from sqlalchemy.sql.schema import Column, MetaData, Table, ForeignKey, \
 from sqlalchemy.sql.sqltypes import String, Integer, Float, Date, Boolean
 
 from gtfslib.model import FeedInfo, Agency, Stop, Route, Calendar, CalendarDate, \
-    Trip, StopTime, Transfer, Shape, ShapePoint
+    Trip, StopTime, Transfer, Shape, ShapePoint, Zone
 
 
 # ORM Mappings
@@ -63,12 +63,23 @@ class _Orm(object):
                 Column('agency_fare_url', String))
     mapper(Agency, _agency_mapper, properties={
         'feed' : relationship(FeedInfo, backref=backref('agencies', cascade="all,delete-orphan"),
-                              primaryjoin=_feedinfo_id_column == foreign(_agency_feed_id_column)),
+                              primaryjoin=_feedinfo_id_column == foreign(_agency_feed_id_column))
+    })
+
+    _zone_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
+    _zone_id_column = Column('zone_id', String, primary_key=True)
+    _zone_mapper = Table('zones', _metadata,
+                _zone_feed_id_column,
+                _zone_id_column)
+    mapper(Zone, _zone_mapper, properties={
+        'feed' : relationship(FeedInfo, backref=backref('zones', cascade="all,delete-orphan"),
+                              primaryjoin=_feedinfo_id_column == foreign(_zone_feed_id_column))
     })
 
     _stop_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True) 
     _stop_id_column = Column('stop_id', String, primary_key=True)
     _stop_parent_id_column = Column('parent_station_id', String, nullable=True)
+    _stop_zone_id_column = Column('zone_id', String, nullable=True)
     _stop_mapper = Table('stops', _metadata,
                 _stop_feed_id_column,
                 _stop_id_column,
@@ -80,10 +91,11 @@ class _Orm(object):
                 Column('wheelchair_boarding', Integer, nullable=False),
                 Column('stop_code', String),
                 Column('stop_desc', String),
-                Column('zone_id', String),
+                _stop_zone_id_column,
                 Column('stop_url', String),
                 Column('stop_timezone', String),
                 ForeignKeyConstraint(['feed_id', 'parent_station_id'], ['stops.feed_id', 'stops.stop_id']),
+                ForeignKeyConstraint(['feed_id', 'zone_id'], ['zones.feed_id', 'zones.zone_id']),
                 # TODO Make those index parametrable
                 Index('idx_stops_lat', 'stop_lat'),
                 Index('idx_stops_lon', 'stop_lon'),
@@ -96,7 +108,9 @@ class _Orm(object):
         'sub_stops' : relationship(Stop, remote_side=[_stop_feed_id_column, _stop_parent_id_column], uselist=True,
                                    primaryjoin=(_stop_parent_id_column == foreign(_stop_id_column)) & (_stop_feed_id_column == _stop_feed_id_column)),
         'parent_station' : relationship(Stop, remote_side=[_stop_feed_id_column, _stop_id_column],
-                                   primaryjoin=(_stop_id_column == foreign(_stop_parent_id_column)) & (_stop_feed_id_column == _stop_feed_id_column))
+                                   primaryjoin=(_stop_id_column == foreign(_stop_parent_id_column)) & (_stop_feed_id_column == _stop_feed_id_column)),
+        'zone' : relationship(Zone, backref=backref('stops', cascade="all,delete-orphan"),
+                               primaryjoin=(_zone_id_column == foreign(_stop_zone_id_column)) & (_zone_feed_id_column == _stop_feed_id_column))
     })
 
     _transfer_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
