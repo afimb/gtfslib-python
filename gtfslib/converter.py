@@ -22,7 +22,8 @@ from gtfslib.model import Agency, FeedInfo, Route, Calendar, CalendarDate, Stop,
     Trip, StopTime, Transfer, Shape, ShapePoint, Zone, FareAttribute, FareRule
 from gtfslib.spatial import DistanceCache, orthodromic_distance,\
     orthodromic_seg_distance
-from gtfslib.utils import timing, fmttime, ContinousPiecewiseLinearFunc
+from gtfslib.utils import timing, fmttime, ContinousPiecewiseLinearFunc,\
+    group_items
 
 
 logger = logging.getLogger('libgtfs')
@@ -511,62 +512,62 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
 
     logger.info("Normalizing trips...")
     ntrips = 0
-    # TODO Disabled batching for now, replace by batching in python using our list of trip IDs.
-    for trip in dao.trips(fltr=Trip.feed_id == feed_id, prefetch_stop_times=True, prefetch_stops=True):
-        stopseq = 0
-        n_stoptimes = len(trip.stop_times)
-        last_stoptime_with_time = None
-        to_interpolate = []
-        odometer.reset(trip.shape_id)
-        for stoptime in trip.stop_times:
-            stoptime.stop_sequence = stopseq
-            stoptime.shape_dist_traveled = odometer.dist_traveled(trip.shape_id, stoptime.stop,
-                        stoptime.shape_dist_traveled if stoptime.shape_dist_traveled != -999999 else None)
-            if stopseq == 0:
-                # Force first arrival time to NULL
-                stoptime.arrival_time = None
-            if stopseq == n_stoptimes - 1:
-                # Force last departure time to NULL
-                stoptime.departure_time = None
-            if stoptime.interpolated:
-                to_interpolate.append(stoptime)
-            else:
-                if len(to_interpolate) > 0:
-                    # Interpolate
-                    if last_stoptime_with_time is None:
-                        logger.error("Cannot interpolate missing time at trip start: %s" % trip)
-                        for stti in to_interpolate:
-                            # Use first defined time as fallback value.
-                            stti.arrival_time = stoptime.arrival_time
-                            stti.departure_time = stoptime.arrival_time
-                    else:
-                        tdist = stoptime.shape_dist_traveled - last_stoptime_with_time.shape_dist_traveled
-                        ttime = stoptime.arrival_time - last_stoptime_with_time.departure_time
-                        for stti in to_interpolate:
-                            fdist = stti.shape_dist_traveled - last_stoptime_with_time.shape_dist_traveled
-                            t = last_stoptime_with_time.departure_time + ttime * fdist // tdist
-                            stti.arrival_time = t
-                            stti.departure_time = t
-                to_interpolate = []
-                last_stoptime_with_time = stoptime
-            stopseq += 1
+    for idlist in group_items(trip_ids, 1000):
+        # Process trips and stop times by 1k trips at a time
+        for trip in dao.trips(fltr=(Trip.feed_id == feed_id) & (Trip.trip_id.in_(idlist)), prefetch_stop_times=True, prefetch_stops=True):
+            stopseq = 0
+            n_stoptimes = len(trip.stop_times)
+            last_stoptime_with_time = None
+            to_interpolate = []
+            odometer.reset(trip.shape_id)
+            for stoptime in trip.stop_times:
+                stoptime.stop_sequence = stopseq
+                stoptime.shape_dist_traveled = odometer.dist_traveled(trip.shape_id, stoptime.stop,
+                            stoptime.shape_dist_traveled if stoptime.shape_dist_traveled != -999999 else None)
+                if stopseq == 0:
+                    # Force first arrival time to NULL
+                    stoptime.arrival_time = None
+                if stopseq == n_stoptimes - 1:
+                    # Force last departure time to NULL
+                    stoptime.departure_time = None
+                if stoptime.interpolated:
+                    to_interpolate.append(stoptime)
+                else:
+                    if len(to_interpolate) > 0:
+                        # Interpolate
+                        if last_stoptime_with_time is None:
+                            logger.error("Cannot interpolate missing time at trip start: %s" % trip)
+                            for stti in to_interpolate:
+                                # Use first defined time as fallback value.
+                                stti.arrival_time = stoptime.arrival_time
+                                stti.departure_time = stoptime.arrival_time
+                        else:
+                            tdist = stoptime.shape_dist_traveled - last_stoptime_with_time.shape_dist_traveled
+                            ttime = stoptime.arrival_time - last_stoptime_with_time.departure_time
+                            for stti in to_interpolate:
+                                fdist = stti.shape_dist_traveled - last_stoptime_with_time.shape_dist_traveled
+                                t = last_stoptime_with_time.departure_time + ttime * fdist // tdist
+                                stti.arrival_time = t
+                                stti.departure_time = t
+                    to_interpolate = []
+                    last_stoptime_with_time = stoptime
+                stopseq += 1
 
-        if len(to_interpolate) > 0:
-            # Should not happen, but handle the case, we never know
-            if last_stoptime_with_time is None:
-                logger.error("Cannot interpolate missing time, no time at all: %s" % trip)
-                # Keep times NULL (TODO: or remove the trip?)
-            else:
-                logger.error("Cannot interpolate missing time at trip end: %s" % trip)
-                for stti in to_interpolate:
-                    # Use last defined time as fallback value
-                    stti.arrival_time = last_stoptime_with_time.departure_time
-                    stti.departure_time = last_stoptime_with_time.departure_time
+            if len(to_interpolate) > 0:
+                # Should not happen, but handle the case, we never know
+                if last_stoptime_with_time is None:
+                    logger.error("Cannot interpolate missing time, no time at all: %s" % trip)
+                    # Keep times NULL (TODO: or remove the trip?)
+                else:
+                    logger.error("Cannot interpolate missing time at trip end: %s" % trip)
+                    for stti in to_interpolate:
+                        # Use last defined time as fallback value
+                        stti.arrival_time = last_stoptime_with_time.departure_time
+                        stti.departure_time = last_stoptime_with_time.departure_time
 
-        ntrips += 1
-        if ntrips % 1000 == 0:
-            logger.info("%d trips" % ntrips)
-            dao.flush()
+            ntrips += 1
+        logger.info("%d trips" % ntrips)
+        dao.flush()
     dao.flush()
     logger.info("Normalized %d trips" % ntrips)
     # odometer._debug_cache()
