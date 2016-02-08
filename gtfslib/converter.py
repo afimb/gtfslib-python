@@ -19,7 +19,7 @@
 import logging
 
 from gtfslib.model import Agency, FeedInfo, Route, Calendar, CalendarDate, Stop, \
-    Trip, StopTime, Transfer, Shape, ShapePoint
+    Trip, StopTime, Transfer, Shape, ShapePoint, Zone
 from gtfslib.spatial import DistanceCache, orthodromic_distance,\
     orthodromic_seg_distance
 from gtfslib.utils import timing, fmttime, ContinousPiecewiseLinearFunc
@@ -236,8 +236,14 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     dao.flush()
     logger.info("Imported %d agencies" % n_agencies)
 
-    def import_stop(stop, stoptype, item_ids, station_ids=None):
+    def import_stop(stop, stoptype, zone_ids, item_ids, station_ids=None):
         sval = vars(stop)
+        zone_id = sval.get('zone_id')
+        if zone_id and zone_id not in zone_ids:
+            # Lazy-creation of zone
+            zone = Zone(feed_id, zone_id)
+            zone_ids.add(zone_id)
+            dao.add(zone)
         sval['location_type'] = _toint(sval.get('location_type'), Stop.TYPE_STOP)
         if sval['location_type'] != stoptype:
             return
@@ -271,16 +277,17 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
 
     stop_ids = set()
     station_ids = set()
-    logger.info("Importing stations and stops...")
+    zone_ids = set()
+    logger.info("Importing zones, stations and stops...")
     n_stations = n_stops = 0
     for station in gtfs.stops():
-        import_stop(station, Stop.TYPE_STATION, station_ids)
+        import_stop(station, Stop.TYPE_STATION, zone_ids, station_ids)
         n_stations += 1
     for stop in gtfs.stops():
-        import_stop(stop, Stop.TYPE_STOP, stop_ids, station_ids)
+        import_stop(stop, Stop.TYPE_STOP, zone_ids, stop_ids, station_ids)
         n_stops += 1
     dao.flush()
-    logger.info("Imported %d stations and %d stops" % (n_stations, n_stops))
+    logger.info("Imported %d zones, %d stations and %d stops" % (len(zone_ids), n_stations, n_stops))
 
     logger.info("Importing transfers...")
     n_transfers = 0
