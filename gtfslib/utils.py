@@ -19,7 +19,7 @@
 import bisect
 import logging
 import time
-
+import six.moves
 
 def timing(f):
     def wrap(*args):
@@ -40,6 +40,14 @@ def fmttime(ssm):
     ssm %= 60
     s = ssm
     return "%d:%02d:%02d" % (h, m, s)
+
+def group_items(items, group_size):
+    """Split items into chunks of size group_size
+       (except the last which can obviously be shorter).
+       Unbelievably, this is not part of standard python."""
+    itemlist = list(items)
+    for idx in six.moves.range(0, len(itemlist), group_size):
+        yield itemlist[idx:idx + group_size]
 
 class ContinousPiecewiseLinearFunc(object):
 
