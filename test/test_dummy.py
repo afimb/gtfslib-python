@@ -49,6 +49,10 @@ class TestDummyGtfs(unittest.TestCase):
         # Check feed
         feed = dao.feed()
         self.assertTrue(feed.feed_id == "")
+        self.assertTrue(feed.feed_publisher_name == "Mecatran")
+        self.assertTrue(feed.feed_publisher_url == "http://www.mecatran.com/")
+        self.assertTrue(feed.feed_contact_email == "support@mecatran.com")
+        self.assertTrue(feed.feed_lang == "fr")
         self.assertTrue(len(dao.agencies()) == 2)
         self.assertTrue(len(dao.routes()) == 3)
         self.assertTrue(len(feed.agencies) == 2)

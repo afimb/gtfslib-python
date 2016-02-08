@@ -41,6 +41,12 @@ class TestMiniGtfs(unittest.TestCase):
         # Check feed
         feed = dao.feed()
         self.assertTrue(feed.feed_id == "")
+        self.assertTrue(feed.feed_publisher_name is None)
+        self.assertTrue(feed.feed_publisher_url is None)
+        self.assertTrue(feed.feed_contact_email is None)
+        self.assertTrue(feed.feed_contact_url is None)
+        self.assertTrue(feed.feed_start_date is None)
+        self.assertTrue(feed.feed_end_date is None)
         self.assertTrue(len(dao.agencies()) == 1)
         self.assertTrue(len(dao.routes()) == 1)
         self.assertTrue(len(feed.agencies) == 1)
