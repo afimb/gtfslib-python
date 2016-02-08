@@ -25,7 +25,7 @@ import zipfile
 class CsvTableFactory(object):
 
     def __init__(self, objname, rows):
-        self._header = self._strip(six.next(rows))
+        self._header = [ self._strip_and_nullify(item) for item in six.next(rows) ]
         if self._header[0].startswith(six.u('\ufeff')):
             self._header[0] = self._header[0][1:]
         self._rows = rows
@@ -37,11 +37,14 @@ class CsvTableFactory(object):
     def __iter__(self):
         return self
 
-    def _strip(self, rows):
-        return [ item.strip() for item in rows ]
+    def _strip_and_nullify(self, item):
+        ret = item.strip()
+        if len(ret) == 0:
+            return None
+        return ret
 
     def __next__(self):
-        row = self._strip(six.next(self._rows))
+        row = [ self._strip_and_nullify(item) for item in six.next(self._rows) ]
         args = dict(six.moves.zip_longest(self._header, row, fillvalue=None))
         return self._factory(**args)
         # return dic
