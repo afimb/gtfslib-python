@@ -14,7 +14,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
 from gtfslib.spatial import orthodromic_distance
-import logging
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
