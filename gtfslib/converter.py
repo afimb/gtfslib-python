@@ -144,9 +144,12 @@ class _OdometerShape(object):
             if best_dist >= self._distance:
                 self._distance = best_dist
             else:
-                # This can be harmless if the backtracking distance is small
-                logger.warn("Backtracking of %f m detected in shape %s for stop %s (%s) (%f,%f) at distance %f < %f m on segment #[%d-%d]" % (
-                        self._distance - best_dist, self._shape.shape_id, stop.stop_id, stop.stop_name, stop.stop_lat, stop.stop_lon, best_dist, self._distance, best_i, best_i+1))
+                delta = self._distance - best_dist
+                if delta > 10:
+                    # This is harmless if the backtracking distance is small.
+                    # We have lots of false positive (<<1m) due to rounding errors.
+                    logger.warn("Backtracking of %f m detected in shape %s for stop %s (%s) (%f,%f) at distance %f < %f m on segment #[%d-%d]" % (
+                                delta, self._shape.shape_id, stop.stop_id, stop.stop_name, stop.stop_lat, stop.stop_lon, best_dist, self._distance, best_i, best_i+1))
             self._istart = best_i
             self._cache_miss += 1
             self._cache_cursor = self._cache_cursor.insert(stop, self._distance)
