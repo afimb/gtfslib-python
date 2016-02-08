@@ -30,7 +30,7 @@ logger = logging.getLogger('libgtfs')
 DOW_NAMES = { 0: 'monday', 1: 'tuesday', 2: 'wednesday', 3: 'thursday', 4: 'friday', 5: 'saturday', 6: 'sunday' }
 
 # TODO Enable this when we have a cache
-ENABLE_SHAPE_DISTANCE = False
+ENABLE_SHAPE_DISTANCE = True
 
 def _toint(s, default_value=None):
     if s is None or len(s) == 0:
@@ -54,11 +54,30 @@ def _tofloat(s, default_value=None):
         return default_value
     return float(s)
 
+class _CacheEntry(object):
+
+    def __init__(self, distance):
+        self._distance = distance
+        self._next_entries = {}
+
+    def next_entry(self, stop):
+        return self._next_entries.get(stop.stop_id)
+
+    def distance(self):
+        return self._distance
+
+    def insert(self, stop, distance):
+        next_entry = _CacheEntry(distance)
+        self._next_entries[stop.stop_id] = next_entry
+        return next_entry
+
 class _OdometerShape(object):
 
     def __init__(self, shape):
         self._shape = shape
-        self._cache = {}
+        self._cache = _CacheEntry(None)
+        self._cache_hit = 0
+        self._cache_miss = 0
         if all(pt.shape_dist_traveled != -999999 for pt in shape.points):
             self._xdist = ContinousPiecewiseLinearFunc()
         else:
@@ -98,6 +117,12 @@ class _OdometerShape(object):
             # We need to determine ourselves where in the shape we lie
             # TODO Implement a cache, this can be slow for lots of trips
             # and the result is the same for the same pattern
+            # Check the cache first
+            cache_entry = self._cache_cursor.next_entry(stop)
+            if cache_entry is not None:
+                self._cache_cursor = cache_entry
+                self._cache_hit += 1
+                return cache_entry.distance()
             min_dist = 1e20
             best_i = self._istart
             best_dist = 0
@@ -123,7 +148,12 @@ class _OdometerShape(object):
                 logger.warn("Backtracking of %f m detected in shape %s for stop %s (%s) (%f,%f) at distance %f < %f m on segment #[%d-%d]" % (
                         self._distance - best_dist, self._shape.shape_id, stop.stop_id, stop.stop_name, stop.stop_lat, stop.stop_lon, best_dist, self._distance, best_i, best_i+1))
             self._istart = best_i
+            self._cache_miss += 1
+            self._cache_cursor = self._cache_cursor.insert(stop, self._distance)
             return self._distance
+
+    def _debug_cache(self):
+        print("Shape %s: Cache hit: %d, misses: %d" % (self._shape.shape_id, self._cache_hit, self._cache_miss))
 
 class _Odometer(object):
     _shapes = {}
@@ -150,6 +180,10 @@ class _Odometer(object):
             self._distance += self._dcache.orthodromic_distance(self._last_stop, stop)
         self._last_stop = stop
         return self._distance
+
+    def _debug_cache(self):
+        for odoshp in self._shapes.values():
+            odoshp._debug_cache()
 
 @timing
 def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
@@ -475,6 +509,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
             dao.flush()
     dao.flush()
     logger.info("Normalized %d trips" % ntrips)
+    # odometer._debug_cache()
 
     # Note: we expand frequencies *after* normalization
     # for performances purpose only: that minimize the
