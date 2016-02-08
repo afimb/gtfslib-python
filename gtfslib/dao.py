@@ -25,7 +25,7 @@ from sqlalchemy.orm.session import sessionmaker
 from gtfslib.converter import _convert_gtfs_model
 from gtfslib.csvgtfs import Gtfs, ZipFileSource
 from gtfslib.model import FeedInfo, Agency, Route, Calendar, CalendarDate, Stop, \
-    Trip, StopTime, Transfer, Shape
+    Trip, StopTime, Transfer, Shape, Zone
 from gtfslib.orm import _Orm
 
 
@@ -101,7 +101,21 @@ class Dao(object):
         if prefetch_routes:
             query = query.options(subqueryload('routes'))
         return query.all()
-    
+
+    def zone(self, zone_id, feed_id="", prefetch_stops=False):
+        query = self._session.query(Zone)
+        if prefetch_stops:
+            query = query.options(subqueryload('stops'))
+        return query.get((feed_id, zone_id))
+
+    def zones(self, fltr=None, prefetch_stops=False):
+        query = self._session.query(Zone)
+        if fltr is not None:
+            query = query.filter(fltr)
+        if prefetch_stops:
+            query = query.options(subqueryload('stops'))
+        return query.all()
+
     def stop(self, stop_id, feed_id="", prefetch_parent=True, prefetch_substops=True):
         query = self._session.query(Stop)
         if prefetch_parent:
