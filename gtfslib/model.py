@@ -48,6 +48,16 @@ class Agency(object):
         return "<%s(id=%s/%s, %s)>" % (
                 self.__class__.__name__, self.feed_id, self.agency_id, _public_vars(self))
 
+class Zone(object):
+
+    def __init__(self, feed_id, zone_id):
+        self.feed_id = feed_id
+        self.zone_id = zone_id
+
+    def __repr__(self):
+        return "<%s(id=%s/%s)>" % (
+                self.__class__.__name__, self.feed_id, self.zone_id)
+
 class Stop(object):
     
     TYPE_STOP = 0
