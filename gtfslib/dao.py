@@ -25,7 +25,7 @@ from sqlalchemy.orm.session import sessionmaker
 from gtfslib.converter import _convert_gtfs_model
 from gtfslib.csvgtfs import Gtfs, ZipFileSource
 from gtfslib.model import FeedInfo, Agency, Route, Calendar, CalendarDate, Stop, \
-    Trip, StopTime, Transfer, Shape, Zone
+    Trip, StopTime, Transfer, Shape, Zone, FareAttribute, FareRule
 from gtfslib.orm import _Orm
 
 
@@ -317,6 +317,34 @@ class Dao(object):
             query = query.join(Route).filter(route_fltr)
         if prefetch_points:
             query = query.options(subqueryload('points'))
+        return query.all()
+
+    def fare_attribute(self, fare_id, feed_id="", prefetch_fare_rules=True):
+        query = self._session.query(FareAttribute)
+        if prefetch_fare_rules:
+            query = query.options(subqueryload('fare_rules'))
+        return query.get((feed_id, fare_id))
+
+    def fare_attributes(self, fltr=None, rule_fltr=None, prefetch_fare_rules=True):
+        query = self._session.query(FareAttribute)
+        if fltr is not None:
+            query = query.filter(fltr)
+        if rule_fltr is not None:
+            query = query.join(FareRule)
+            query = query.filter(rule_fltr)
+        if prefetch_fare_rules:
+            query = query.options(subqueryload('fare_rules'))
+        return query.all()
+
+    def fare_rules(self, fltr=None, fareattr_fltr=None, prefetch_fare_attributes=True):
+        query = self._session.query(FareRule)
+        if fltr is not None:
+            query = query.filter(fltr)
+        if fareattr_fltr is not None:
+            query = query.join(FareAttribute)
+            query = query.filter(fareattr_fltr)
+        if prefetch_fare_attributes:
+            query = query.options(subqueryload('fare_attribute'))
         return query.all()
 
     """
