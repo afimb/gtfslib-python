@@ -338,6 +338,49 @@ class ShapePoint(object):
         return "<%s(id=%s/%s/%s, %s)>" % (
                 self.__class__.__name__, self.feed_id, self.shape_id, self.shape_pt_sequence, _public_vars(self))
 
+class FareAttribute(object):
+
+    PAYMENT_ONBOARD = 0
+    PAYMENT_BEFOREBOARDING = 1
+
+    def __init__(self, feed_id, fare_id, price, currency_type, payment_method, transfers, transfer_duration=None):
+        self.feed_id = feed_id
+        self.fare_id = fare_id
+        self.price = price
+        self.currency_type = currency_type
+        self.payment_method = payment_method
+        self.transfers = transfers
+        self.transfer_duration = transfer_duration
+
+    def __repr__(self):
+        return "<%s(id=%s/%s, %s)>" % (
+                self.__class__.__name__, self.feed_id, self.fare_id, _public_vars(self))
+
+class FareRule(object):
+
+    def __init__(self, feed_id, fare_id, route_id=None, origin_id=None, destination_id=None, contains_id=None):
+        self.feed_id = feed_id
+        self.fare_id = fare_id
+        self.route_id = route_id
+        self.origin_id = origin_id
+        self.destination_id = destination_id
+        self.contains_id = contains_id
+
+    def __eq__(self, other):
+        if not isinstance(other, FareRule):
+            return False
+        return _generic_eq(self._primary_keys(), other._primary_keys())
+
+    def __hash__(self):
+        return _generic_hash(self._primary_keys())
+
+    def _primary_keys(self):
+        return (self.feed_id, self.fare_id, self.route_id, self.origin_id, self.destination_id, self.contains_id)
+
+    def __repr__(self):
+        return "<%s(id=%s/%s, %s)>" % (
+                self.__class__.__name__, self.feed_id, self.fare_id, _public_vars(self))
+
 # ---------------------------
 # Some private helper methods
 
