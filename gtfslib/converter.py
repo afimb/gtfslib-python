@@ -19,7 +19,7 @@
 import logging
 
 from gtfslib.model import Agency, FeedInfo, Route, Calendar, CalendarDate, Stop, \
-    Trip, StopTime, Transfer, Shape, ShapePoint, Zone
+    Trip, StopTime, Transfer, Shape, ShapePoint, Zone, FareAttribute, FareRule
 from gtfslib.spatial import DistanceCache, orthodromic_distance,\
     orthodromic_seg_distance
 from gtfslib.utils import timing, fmttime, ContinousPiecewiseLinearFunc
@@ -330,6 +330,34 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         n_routes += 1
     dao.flush()
     logger.info("Imported %d routes" % n_routes)
+
+    logger.info("Importing fares...")
+    n_fares = 0
+    for fare_attr in gtfs.fare_attributes():
+        fval = vars(fare_attr)
+        fval['price'] = _tofloat(fval.get('price'))
+        fval['payment_method'] = _toint(fval.get('payment_method'))
+        fval['transfers'] = _toint(fval.get('transfers'))
+        if fval.get('transfer_duration') is not None:
+            fval['transfer_duration'] = _toint(fval.get('transfer_duration'))
+        fare = FareAttribute(feed_id, **fval)
+        dao.add(fare)
+        n_fares += 1
+    dao.flush()
+    fare_rules = set()
+    for fare_rule in gtfs.fare_rules():
+        fval = vars(fare_rule)
+        fare_rule2 = FareRule(feed_id, **fval)
+        if fare_rule2 in fare_rules:
+            if lenient:
+                logger.error("Duplicated fare rule (%s), skipping." % (fare_rule2))
+                continue
+            else:
+                raise KeyError("Duplicated fare rule (%s)" % (fare_rule2))
+        dao.add(fare_rule2)
+        fare_rules.add(fare_rule2)
+    dao.flush()
+    logger.info("Imported %d fare and %d rules" % (n_fares, len(fare_rules)))
 
     logger.info("Importing calendars...")
     calanddates2 = {}
