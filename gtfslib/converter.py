@@ -161,7 +161,7 @@ class _OdometerShape(object):
             return self._distance
 
     def _debug_cache(self):
-        print("Shape %s: Cache hit: %d, misses: %d" % (self._shape.shape_id, self._cache_hit, self._cache_miss))
+        logger.debug("Shape %s: Cache hit: %d, misses: %d" % (self._shape.shape_id, self._cache_hit, self._cache_miss))
 
 class _Odometer(object):
     _shapes = {}
