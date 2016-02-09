@@ -37,6 +37,7 @@ setup(
     entry_points={
         'console_scripts': [
             'gtfsdbloader=gtfslib.gtfsdbloader:main',
+            'gtfsrun=gtfsplugins.gtfsrun:main'
         ],
     },
 )
