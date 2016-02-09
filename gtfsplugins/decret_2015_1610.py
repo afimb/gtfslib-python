@@ -18,24 +18,16 @@
 """
 
 from _collections import defaultdict
-import logging
+from gtfslib.utils import fmttime
 
-from sqlalchemy.sql.functions import func
-
-from gtfslib.dao import Dao
-from gtfslib.model import CalendarDate, Calendar, Trip, StopTime
-from gtfslib.utils import gtfstime, fmttime
-
-"""
-Cette fonction teste un ensemble de voyages (trips) d'un réseau, d'une ligne
-ou d'une collection de lignes, par rapport au décret n° 2015-1610 du 8 décembre 2015
-relatif aux critères d'espacement moyen des arrêts et de variation de la fréquence de
-passage des services réguliers de transport public routier urbain de personnes.
-
-Pour plus d'informations:
-http://www.legifrance.gouv.fr/affichTexte.do?cidTexte=JORFTEXT000031589954
-"""
+"Cf. plugin pour la documentation"
 def decret_2015_1610(trips):
+
+    if len(trips) == 0:
+        print("Aucun voyage, impossible de calculer.")
+        return None
+
+    print("Calcul decret 2015 1610 sur %d voyages." % (len(trips)))
 
     print("Calcul de l'espacement moyen des arrêts...")
     espacement_moyen = 0
@@ -106,18 +98,15 @@ def decret_2015_1610(trips):
           % ("URBAIN" if urbain else "NON URBAIN"))
     return urbain
 
-if __name__ == '__main__':
-    # TODO Make a proper main
-    logging.basicConfig(level=logging.INFO)
-
-    dao = Dao("decret.sqlite")
-    #dao.delete_feed("")
-    #dao.load_gtfs("gtfs.zip")
-
-    print("Chargement des données...")
-    # Load only one route
-    # trips = dao.trips(fltr=(Trip.route_id == 'A1'), prefetch_stop_times=True, prefetch_calendars=True)
-    # Load all trips
-    trips = dao.trips(prefetch_stop_times=True, prefetch_calendars=True)
-    urbain = decret_2015_1610(trips)
-    print("urbain=%s" % urbain)
+class Decret_2015_1610(object):
+    """
+    Teste un ensemble de voyages (trips) par rapport au décret n° 2015-1610 du 8 décembre 2015
+    relatif aux critères d'espacement moyen des arrêts et de variation de la fréquence de
+    passage des services réguliers de transport public routier urbain de personnes.
+    Pour plus d'informations:
+    http://www.legifrance.gouv.fr/affichTexte.do?cidTexte=JORFTEXT000031589954
+    """
+    def run(self, context, **kwargs):
+        trips = context.filter_trips(prefetch_stop_times=True, prefetch_calendars=True)
+        urbain = decret_2015_1610(trips)
+        return urbain
