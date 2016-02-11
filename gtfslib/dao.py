@@ -261,7 +261,7 @@ class Dao(object):
         if route_fltr is not None:
             query = query.join(Route).filter(route_fltr)
         if calendar_fltr is not None:
-            query = query.join(Calendar).filter(calendar_fltr)
+            query = query.join(Calendar).join(CalendarDate).filter(calendar_fltr)
         if prefetch_stop_times:
             prefetch_trips = True
         if prefetch_trips:
