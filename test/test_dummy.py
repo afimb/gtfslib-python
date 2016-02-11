@@ -145,14 +145,14 @@ class TestDummyGtfs(unittest.TestCase):
 
         # Check trip for route
         n = 0
-        trips = dao.trips(route_fltr=Route.route_type == Route.TYPE_BUS)
+        trips = dao.trips(fltr=Route.route_type == Route.TYPE_BUS)
         for trip in trips:
             self.assertTrue(trip.route.route_type == Route.TYPE_BUS)
             n += 1
         self.assertTrue(n > 20)
 
         # Check trips on date
-        trips = dao.trips(calendar_fltr=func.date(CalendarDate.date) == july4.date, prefetch_calendars=True)
+        trips = dao.trips(fltr=func.date(CalendarDate.date) == july4.date, prefetch_calendars=True)
         n = 0
         for trip in trips:
             self.assertTrue(july4 in trip.calendar.dates)

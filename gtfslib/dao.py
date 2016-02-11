@@ -226,16 +226,11 @@ class Dao(object):
             query = query.options(subqueryload('stop_times'))
         return query.get((feed_id, trip_id))
     
-    def trips(self, fltr=None, calendar_fltr=None, stoptime_fltr=None, route_fltr=None, prefetch_stop_times=True, prefetch_routes=False, prefetch_stops=False, prefetch_calendars=False, batch_size=0):
+    def trips(self, fltr=None, prefetch_stop_times=True, prefetch_routes=False, prefetch_stops=False, prefetch_calendars=False, batch_size=0):
         query = self._session.query(Trip)
         if fltr is not None:
+            query = self._dynamically_join(fltr, query, do_trips=False)
             query = query.filter(fltr)
-        if calendar_fltr is not None:
-            query = query.join(Calendar).join(CalendarDate).filter(calendar_fltr)
-        if stoptime_fltr is not None:
-            query = query.join(StopTime).filter(stoptime_fltr)
-        if route_fltr is not None:
-            query = query.join(Route).filter(route_fltr)
         if prefetch_stops:
             prefetch_stop_times = True
         if prefetch_stop_times:
@@ -368,7 +363,30 @@ class Dao(object):
             return query.all()
         else:
             return _page_generator(query, batch_size)
-            
+
+    def _dynamically_join(self, fltr, query, do_stops=True, do_routes=True, do_trips=True, do_calendars=True, do_stop_times=True):
+        TABLE_NAMES = [ "stops", "routes", "trips", "calendar_dates", "stop_times" ]
+        do_join = [ False for tbl in TABLE_NAMES ]
+        def _recurse_inspect(fltr_node):
+            if hasattr(fltr_node, "table"):
+                for i in range(0, len(TABLE_NAMES)):
+                    if fltr_node.table.name == TABLE_NAMES[i]:
+                        do_join[i] = True
+            for child in fltr_node.get_children():
+                _recurse_inspect(child)
+        _recurse_inspect(fltr)
+        if do_join[0] and do_stops:
+            query = query.join(Stop)
+        if do_join[1] and do_routes:
+            query = query.join(Route)
+        if do_join[2] and do_trips:
+            query = query.join(Trip)
+        if do_join[3] and do_calendars:
+            query = query.join(Calendar).join(CalendarDate)
+        if do_join[4] and do_stop_times:
+            query = query.join(StopTime)
+        return query
+
     def load_gtfs(self, filename, feed_id="", lenient=False, **kwargs):
         @transactional(self.session())
         def _do_load_gtfs():
