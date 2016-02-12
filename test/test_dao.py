@@ -82,7 +82,7 @@ class TestDao(unittest.TestCase):
         self.assertTrue(sa1.stop_name == "Stop A1")
         self.assertTrue(sa1.parent_station.stop_name == "Station A")
         
-        self.assertTrue(len(dao.stops()) == 7)
+        self.assertTrue(len(list(dao.stops())) == 7)
 
     def test_route_agency_multi_feed(self):
         dao = Dao()
@@ -203,11 +203,11 @@ class TestDao(unittest.TestCase):
         dao.add_all([ f1, s1, s2, s3 ])
 
         # Rectangular area
-        stops = dao.stops(fltr=dao.in_area(RectangularArea(0, 0, 1, 1)))
+        stops = list(dao.stops(fltr=dao.in_area(RectangularArea(0, 0, 1, 1))))
         self.assertTrue(len(stops) == 0)
-        stops = dao.stops(fltr=dao.in_area(RectangularArea(-90, -180, 90, 180)))
+        stops = list(dao.stops(fltr=dao.in_area(RectangularArea(-90, -180, 90, 180))))
         self.assertTrue(len(stops) == 3)
-        stops = dao.stops(fltr=dao.in_area(RectangularArea(45.05, 0.05, 45.15, 0.15)))
+        stops = list(dao.stops(fltr=dao.in_area(RectangularArea(45.05, 0.05, 45.15, 0.15))))
         self.assertTrue(len(stops) == 1)
         self.assertTrue(stops[0].stop_id == 'S2')
 

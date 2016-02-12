@@ -128,17 +128,21 @@ class Dao(object):
             query = query.options(subqueryload('sub_stops'))
         return query.get((feed_id, stop_id))
     
-    def stops(self, fltr=None, prefetch_parent=True, prefetch_substops=True, batch_size=0):
-        query = self._session.query(Stop)
+    def stops(self, fltr=None, prefetch_parent=True, prefetch_substops=True, batch_size=2):
+        idquery = self._session.query(Stop.feed_id, Stop.stop_id)
         if fltr is not None:
-            query = _AutoJoiner(self._orm, query, fltr).autojoin()
-            query = query.filter(fltr)
-        if prefetch_parent:
-            query = query.options(subqueryload('parent_station'))
-        if prefetch_substops:
-            query = query.options(subqueryload('sub_stops'))
-        query = query.order_by(Stop.feed_id, Stop.stop_id)
-        return self._page_query(query, batch_size)
+            idquery = _AutoJoiner(self._orm, idquery, fltr).autojoin()
+            idquery = idquery.filter(fltr)
+        # Only query IDs first
+        stopids = idquery.all()
+        def query_factory():
+            query = self._session.query(Stop)
+            if prefetch_parent:
+                query = query.options(subqueryload('parent_station'))
+                if prefetch_substops:
+                    query = query.options(subqueryload('sub_stops'))
+            return query
+        return self._page_query(query_factory, Stop.feed_id, Stop.stop_id, stopids, batch_size)
 
     def in_area(self, area):
         return (Stop.stop_lat >= area.min_lat) & (Stop.stop_lat <= area.max_lat) & (Stop.stop_lon >= area.min_lon) & (Stop.stop_lon <= area.max_lon)
@@ -242,9 +246,9 @@ class Dao(object):
             if prefetch_calendars:
                 query = query.options(subqueryload('calendar'))
             return query
-        return self._page_query_2(query_factory, Trip.feed_id, Trip.trip_id, tripids, batch_size)
+        return self._page_query(query_factory, Trip.feed_id, Trip.trip_id, tripids, batch_size)
 
-    def stoptimes(self, fltr=None, prefetch_trips=True, prefetch_stop_times=False, batch_size=0):
+    def stoptimes(self, fltr=None, prefetch_trips=True, prefetch_stop_times=False):
         query = self._session.query(StopTime)
         if fltr is not None:
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
@@ -256,8 +260,10 @@ class Dao(object):
             if prefetch_stop_times:
                 loadopt = loadopt.subqueryload('stop_times')
             query = query.options(loadopt)
-        query = query.order_by(StopTime.feed_id, StopTime.trip_id, StopTime.stop_sequence)
-        return self._page_query(query, batch_size)
+        # Note: ID batching would be difficult to implement for StopTime
+        # as StopTime do have a composite-primary composed of 3 elements
+        # and 2 of them (trip_id + stop_seq) can't be grouped easily.
+        return query.all()
 
     def hop_first(self):
         return self._stoptime1
@@ -318,29 +324,7 @@ class Dao(object):
             query = query.options(subqueryload('fare_attribute'))
         return query.all()
 
-    """
-    Note: If you use _page_query, please make sure you add an order_by on the query!
-    See http://docs.sqlalchemy.org/en/latest/faq/ormconfiguration.html#faq-subqueryload-limit-sort
-    """
-    def _page_query(self, query, batch_size=0):
-        def _page_generator(query, batch_size):
-            offset = 0
-            somedata = True
-            while somedata:
-                query = query.limit(batch_size).offset(offset)
-                offset += batch_size
-                batch = query.all()
-                nrows = 0
-                for row in batch:
-                    nrows += 1
-                    yield row
-                somedata = (nrows >= batch_size)
-        if batch_size <= 0:
-            return query.all()
-        else:
-            return _page_generator(query, batch_size)
-
-    def _page_query_2(self, query_factory, item_feed_id_column, item_id_column, ids, batch_size):
+    def _page_query(self, query_factory, item_feed_id_column, item_id_column, ids, batch_size):
         if batch_size <= 0:
             batch_size = 1000
         for feed_id, item_ids in group_pairs(ids, batch_size):
