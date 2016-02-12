@@ -20,6 +20,7 @@ import bisect
 import logging
 import time
 import six.moves
+from collections import defaultdict
 
 def timing(f):
     def wrap(*args):
@@ -48,6 +49,14 @@ def group_items(items, group_size):
     itemlist = list(items)
     for idx in six.moves.range(0, len(itemlist), group_size):
         yield itemlist[idx:idx + group_size]
+
+def group_pairs(pairs, group_size):
+    groups = defaultdict(list)
+    for a, b in pairs:
+        groups[a].append(b)
+    for a, bs in groups.items():
+        for idx in six.moves.range(0, len(bs), group_size):
+            yield a, bs[idx:idx + group_size]
 
 class ContinousPiecewiseLinearFunc(object):
 
