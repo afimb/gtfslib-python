@@ -34,6 +34,8 @@ class _Orm(object):
     # TODO This is hackish. How to check if we already have defined the mapping?
     clear_mappers()
     
+    mappers = []
+
     _feedinfo_id_column = Column('feed_id', String, primary_key=True)
     _agency_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
     _route_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
@@ -47,8 +49,8 @@ class _Orm(object):
                 Column('feed_start_date', Date),
                 Column('feed_end_date', Date),
                 Column('feed_version', String))
-    mapper(FeedInfo, _feedinfo_mapper, properties={
-    })
+    mappers.append(mapper(FeedInfo, _feedinfo_mapper, properties={
+    }))
     
     _agency_id_column = Column('agency_id', String, primary_key=True)
     _route_agency_id_column = Column('agency_id', String, nullable=False)
@@ -61,20 +63,20 @@ class _Orm(object):
                 Column('agency_lang', String),
                 Column('agency_phone', String),
                 Column('agency_fare_url', String))
-    mapper(Agency, _agency_mapper, properties={
+    mappers.append(mapper(Agency, _agency_mapper, properties={
         'feed' : relationship(FeedInfo, backref=backref('agencies', cascade="all,delete-orphan"),
                               primaryjoin=_feedinfo_id_column == foreign(_agency_feed_id_column))
-    })
+    }))
 
     _zone_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
     _zone_id_column = Column('zone_id', String, primary_key=True)
     _zone_mapper = Table('zones', _metadata,
                 _zone_feed_id_column,
                 _zone_id_column)
-    mapper(Zone, _zone_mapper, properties={
+    mappers.append(mapper(Zone, _zone_mapper, properties={
         'feed' : relationship(FeedInfo, backref=backref('zones', cascade="all,delete-orphan"),
                               primaryjoin=_feedinfo_id_column == foreign(_zone_feed_id_column))
-    })
+    }))
 
     _stop_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True) 
     _stop_id_column = Column('stop_id', String, primary_key=True)
@@ -102,7 +104,7 @@ class _Orm(object):
                 Index('idx_stops_code', 'feed_id', 'stop_code'),
                 Index('idx_stops_zone', 'feed_id', 'zone_id'),
                 Index('idx_stops_parent', 'feed_id', 'parent_station_id'))
-    mapper(Stop, _stop_mapper, properties={
+    mappers.append(mapper(Stop, _stop_mapper, properties={
         'feed' : relationship(FeedInfo, backref=backref('stops', cascade="all,delete-orphan"),
                               primaryjoin=_feedinfo_id_column == foreign(_stop_feed_id_column)),
         'sub_stops' : relationship(Stop, remote_side=[_stop_feed_id_column, _stop_parent_id_column], uselist=True,
@@ -111,7 +113,7 @@ class _Orm(object):
                                    primaryjoin=(_stop_id_column == foreign(_stop_parent_id_column)) & (_stop_feed_id_column == _stop_feed_id_column)),
         'zone' : relationship(Zone, backref=backref('stops', cascade="all,delete-orphan"),
                                primaryjoin=(_zone_id_column == foreign(_stop_zone_id_column)) & (_zone_feed_id_column == _stop_feed_id_column))
-    })
+    }))
 
     _transfer_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
     _transfer_from_stop_id_column = Column('from_stop_id', String, primary_key=True)
@@ -126,14 +128,14 @@ class _Orm(object):
                 ForeignKeyConstraint(['feed_id', 'to_stop_id'], ['stops.feed_id', 'stops.stop_id']),
                 Index('idx_transfer_from', 'feed_id', 'from_stop_id'),
                 Index('idx_transfer_to', 'feed_id', 'to_stop_id'))
-    mapper(Transfer, _transfer_mapper, properties={
+    mappers.append(mapper(Transfer, _transfer_mapper, properties={
         'feed' : relationship(FeedInfo, backref=backref('transfers', cascade="all,delete-orphan"),
                               primaryjoin=_feedinfo_id_column == foreign(_transfer_feed_id_column)),
         'from_stop' : relationship(Stop, backref=backref('from_transfers', cascade='all', uselist=True), uselist=False,
                                    primaryjoin=(_transfer_from_stop_id_column == foreign(_stop_id_column)) & (_transfer_feed_id_column == _stop_feed_id_column)),
         'to_stop' : relationship(Stop, backref=backref('to_transfers', cascade='all', uselist=True), uselist=False,
                                  primaryjoin=(_transfer_to_stop_id_column == foreign(_stop_id_column)) & (_transfer_feed_id_column == _stop_feed_id_column))
-    })
+    }))
 
     _route_id_column = Column('route_id', String, primary_key=True)
     _route_mapper = Table('routes', _metadata,
@@ -151,12 +153,12 @@ class _Orm(object):
                 Index('idx_routes_agency', 'feed_id', 'agency_id'),
                 Index('idx_routes_short_name', 'feed_id', 'route_short_name'),
                 Index('idx_routes_type', 'feed_id', 'route_type'))
-    mapper(Route, _route_mapper, properties={
+    mappers.append(mapper(Route, _route_mapper, properties={
         'feed' : relationship(FeedInfo, backref=backref('routes', cascade="all,delete-orphan"),
                                 primaryjoin=_feedinfo_id_column == foreign(_route_feed_id_column)),
         'agency' : relationship(Agency, backref=backref('routes', cascade="all,delete-orphan"),
                                 primaryjoin=(_agency_id_column == foreign(_route_agency_id_column)) & (_agency_feed_id_column == _route_feed_id_column))
-    })
+    }))
 
     _calendar_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
     _calendar_id_column = Column('service_id', String, primary_key=True)
@@ -164,10 +166,10 @@ class _Orm(object):
                 _calendar_feed_id_column,
                 _calendar_id_column
                 )
-    mapper(Calendar, _calendar_mapper, properties={
+    mappers.append(mapper(Calendar, _calendar_mapper, properties={
         'feed' : relationship(FeedInfo, backref=backref('calendars', cascade="all,delete-orphan"),
                               primaryjoin=_feedinfo_id_column == foreign(_calendar_feed_id_column))
-    })
+    }))
     
     _calendar_date_mapper = Table('calendar_dates', _metadata,
                 Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True),
@@ -177,9 +179,9 @@ class _Orm(object):
                 # TOCHECK It seems a composite primary key on (a,b,c) does not need indexing on left elements,
                 # such as (a) and (a,b); but need on (a,c) for example.
                 Index('idx_calendar_dates_date', 'feed_id', 'date'))
-    mapper(CalendarDate, _calendar_date_mapper, properties={
+    mappers.append(mapper(CalendarDate, _calendar_date_mapper, properties={
         'calendar' : relationship(Calendar, backref=backref('dates', cascade="all,delete-orphan"))
-    })
+    }))
 
     _shape_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
     _shape_id_column = Column('shape_id', String, primary_key=True)
@@ -187,10 +189,10 @@ class _Orm(object):
                 _shape_feed_id_column,
                 _shape_id_column
                 )
-    mapper(Shape, _shape_mapper, properties={
+    mappers.append(mapper(Shape, _shape_mapper, properties={
         'feed' : relationship(FeedInfo, backref=backref('shapes', cascade="all,delete-orphan"),
                               primaryjoin=_feedinfo_id_column == foreign(_shape_feed_id_column))
-    })
+    }))
 
     _shape_pt_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
     _shape_pt_shape_id_column = Column('shape_id', String, primary_key=True)
@@ -204,11 +206,11 @@ class _Orm(object):
                 Column('shape_pt_lon', Float, nullable=False),
                 ForeignKeyConstraint(['feed_id', 'shape_id'], ['shapes.feed_id', 'shapes.shape_id']),
                 Index('idx_shape_pt_shape', 'feed_id', 'shape_id'))
-    mapper(ShapePoint, _shape_pt_mapper, properties={
+    mappers.append(mapper(ShapePoint, _shape_pt_mapper, properties={
         # Note: here we specify foreign() on shape_pt feed_id column as there is no ownership relation of feed to shape_pts
         'shape' : relationship(Shape, backref=backref('points', order_by=_shape_pt_seq_column, cascade="all,delete-orphan"),
                               primaryjoin=(_shape_id_column == foreign(_shape_pt_shape_id_column)) & (_shape_feed_id_column == foreign(_shape_pt_feed_id_column)))
-    })
+    }))
 
     _trip_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
     _trip_id_column = Column('trip_id', String, primary_key=True)
@@ -234,7 +236,7 @@ class _Orm(object):
                 ForeignKeyConstraint(['feed_id', 'shape_id'], ['shapes.feed_id', 'shapes.shape_id']),
                 Index('idx_trips_route', 'feed_id', 'route_id'),
                 Index('idx_trips_service', 'feed_id', 'service_id'))
-    mapper(Trip, _trip_mapper, properties={
+    mappers.append(mapper(Trip, _trip_mapper, properties={
         'feed' : relationship(FeedInfo, backref=backref('trips', cascade="all,delete-orphan"),
                               primaryjoin=_feedinfo_id_column == foreign(_trip_feed_id_column)),
         'route' : relationship(Route, backref=backref('trips', cascade="all,delete-orphan"),
@@ -243,7 +245,7 @@ class _Orm(object):
                                   primaryjoin=(_calendar_id_column == foreign(_trip_calendar_id_column)) & (_calendar_feed_id_column == _trip_feed_id_column)),
         'shape' : relationship(Shape, backref=backref('trips', cascade="all,delete-orphan"),
                                   primaryjoin=(_shape_id_column == foreign(_trip_shape_id_column)) & (_shape_feed_id_column == _trip_feed_id_column))
-    })
+    }))
 
     _stop_times_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
     _stop_times_trip_id_column = Column('trip_id', String, primary_key=True)
@@ -266,14 +268,14 @@ class _Orm(object):
                 ForeignKeyConstraint(['feed_id', 'stop_id'], ['stops.feed_id', 'stops.stop_id']),
                 Index('idx_stop_times_stop', 'feed_id', 'stop_id'),
                 Index('idx_stop_times_sequence', 'feed_id', 'stop_sequence'))
-    mapper(StopTime, _stop_times_mapper, properties={
+    mappers.append(mapper(StopTime, _stop_times_mapper, properties={
         # Note: here we specify foreign() on stop_times feed_id column as there is no ownership relation of feed to stop_times
         'trip' : relationship(Trip, backref=backref('stop_times', order_by=_stop_seq_column, cascade="all,delete-orphan"),
                               primaryjoin=(_trip_id_column == foreign(_stop_times_trip_id_column)) & (_trip_feed_id_column == foreign(_stop_times_feed_id_column))),
         'stop' : relationship(Stop, backref=backref('stop_times', cascade="all,delete-orphan"),
                               primaryjoin=(_stop_id_column == foreign(_stop_times_stop_id_column)) & (_stop_feed_id_column == _stop_times_feed_id_column)),
 
-    })
+    }))
 
     _fareattr_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
     _fareattr_id_column = Column('fare_id', String, primary_key=True)
@@ -285,10 +287,10 @@ class _Orm(object):
                 Column('payment_method', Integer, nullable=False),
                 Column('transfers', Integer),
                 Column('transfer_duration', Integer))
-    mapper(FareAttribute, _fareattr_mapper, properties={
+    mappers.append(mapper(FareAttribute, _fareattr_mapper, properties={
         'feed' : relationship(FeedInfo, backref=backref('fare_attributes', cascade="all,delete-orphan"),
                               primaryjoin=_feedinfo_id_column == foreign(_fareattr_feed_id_column))
-    })
+    }))
 
     _farerule_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
     _farerule_id_column = Column('fare_id', String, primary_key=True)
@@ -304,7 +306,7 @@ class _Orm(object):
                 _farerule_destination_id_column,
                 _farerule_contains_id_column,
                 ForeignKeyConstraint(['feed_id', 'fare_id'], ['fare_attributes.feed_id', 'fare_attributes.fare_id']))
-    mapper(FareRule, _farerule_mapper, properties={
+    mappers.append(mapper(FareRule, _farerule_mapper, properties={
         'fare_attribute' : relationship(FareAttribute, backref=backref('fare_rules', cascade="all,delete-orphan")),
         'route' : relationship(Route, backref=backref('fare_rules', cascade="all,delete-orphan"),
                         primaryjoin=(_route_id_column == foreign(_farerule_route_id_column)) & (_route_feed_id_column == _farerule_feed_id_column)),
@@ -314,8 +316,22 @@ class _Orm(object):
                         primaryjoin=(_zone_id_column == foreign(_farerule_destination_id_column)) & (_zone_feed_id_column == _farerule_feed_id_column)),
         'contains' : relationship(Zone, backref=backref('contains_fare_rules', cascade="all,delete-orphan"),
                         primaryjoin=(_zone_id_column == foreign(_farerule_contains_id_column)) & (_zone_feed_id_column == _farerule_feed_id_column))
-    })
+    }))
 
     def __init__(self, engine):
         self._metadata.create_all(engine)
+        self._class_for_table = {}
+        self._table_for_class = {}
+        for mapper in self.mappers:
+            self._class_for_table[mapper.mapped_table.name] = mapper.class_
+            self._table_for_class[mapper.class_] = mapper.mapped_table.name
 
+    def class_for_table(self, tablename):
+        """Return the class associated to a given table name.
+           We implement ourselves this method as there does not seem a reliable way
+           of getting this information from SqlAlchemy itself w/o some brittle hacking."""
+        return self._class_for_table.get(tablename)
+
+    def table_for_class(self, clazz):
+        """Return the table name associated to a give entity class."""
+        return self._table_for_class.get(clazz)
