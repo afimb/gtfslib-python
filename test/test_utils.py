@@ -89,11 +89,11 @@ class TestUtils(unittest.TestCase):
         self.assertTrue(len(pairs) == 1)
         self.assertTrue(pairs == [('A', [1, 2])])
 
-        pairs = list(group_pairs([ ('A', 1), ('B', 2) ], 100))
+        pairs = sorted(list(group_pairs([ ('A', 1), ('B', 2) ], 100)))
         self.assertTrue(len(pairs) == 2)
         self.assertTrue(pairs == [ ('A', [1]), ('B', [2]) ])
 
-        pairs = list(group_pairs([ ('A', 1), ('B', 2), ('A', 3), ('A', 4) ], 2))
+        pairs = sorted(list(group_pairs([ ('A', 1), ('B', 2), ('A', 3), ('A', 4) ], 2)))
         self.assertTrue(len(pairs) == 3)
         self.assertTrue(pairs == [ ('A', [1, 3]), ('A', [4]), ('B', [2]) ])
 
