@@ -98,7 +98,7 @@ class Dao(object):
         return query.get((feed_id, agency_id))
         
     def agencies(self, fltr=None, prefetch_routes=False):
-        query = self._session.query(Agency)
+        query = self._session.query(Agency).distinct()
         if fltr is not None:
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
@@ -113,7 +113,7 @@ class Dao(object):
         return query.get((feed_id, zone_id))
 
     def zones(self, fltr=None, prefetch_stops=False):
-        query = self._session.query(Zone)
+        query = self._session.query(Zone).distinct()
         if fltr is not None:
             query = query.filter(fltr)
         if prefetch_stops:
@@ -128,8 +128,8 @@ class Dao(object):
             query = query.options(subqueryload('sub_stops'))
         return query.get((feed_id, stop_id))
     
-    def stops(self, fltr=None, prefetch_parent=True, prefetch_substops=True, batch_size=2):
-        idquery = self._session.query(Stop.feed_id, Stop.stop_id)
+    def stops(self, fltr=None, prefetch_parent=True, prefetch_substops=True, batch_size=1000):
+        idquery = self._session.query(Stop.feed_id, Stop.stop_id).distinct()
         if fltr is not None:
             idquery = _AutoJoiner(self._orm, idquery, fltr).autojoin()
             idquery = idquery.filter(fltr)
@@ -160,7 +160,7 @@ class Dao(object):
         return self._transfer_tostop
 
     def transfers(self, fltr=None, stop_fltr=None, prefetch_stops=True):
-        query = self._session.query(Transfer)
+        query = self._session.query(Transfer).distinct()
         if fltr is not None:
             query = query.filter(fltr)
         if stop_fltr is not None:
@@ -175,7 +175,7 @@ class Dao(object):
         return self._session.query(Route).get((feed_id, route_id))
 
     def routes(self, fltr=None, prefetch_trips=False):
-        query = self._session.query(Route)
+        query = self._session.query(Route).distinct()
         if fltr is not None:
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
@@ -197,7 +197,7 @@ class Dao(object):
         return query.get((feed_id, service_id))
     
     def calendars(self, fltr=None, prefetch_dates=True, prefetch_trips=False):
-        query = self._session.query(Calendar)
+        query = self._session.query(Calendar).distinct()
         if fltr is not None:
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
@@ -208,7 +208,7 @@ class Dao(object):
         return query.all()
     
     def calendar_dates(self, fltr=None, prefetch_calendars=True, prefetch_trips=False):
-        query = self._session.query(CalendarDate)
+        query = self._session.query(CalendarDate).distinct()
         if fltr is not None:
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
@@ -225,7 +225,7 @@ class Dao(object):
         return query.get((feed_id, trip_id))
     
     def trips(self, fltr=None, prefetch_stop_times=True, prefetch_routes=False, prefetch_stops=False, prefetch_calendars=False, batch_size=1000):
-        idquery = self._session.query(Trip.feed_id, Trip.trip_id)
+        idquery = self._session.query(Trip.feed_id, Trip.trip_id).distinct()
         if fltr is not None:
             idquery = _AutoJoiner(self._orm, idquery, fltr).autojoin()
             idquery = idquery.filter(fltr)
@@ -249,7 +249,7 @@ class Dao(object):
         return self._page_query(query_factory, Trip.feed_id, Trip.trip_id, tripids, batch_size)
 
     def stoptimes(self, fltr=None, prefetch_trips=True, prefetch_stop_times=False):
-        query = self._session.query(StopTime)
+        query = self._session.query(StopTime).distinct()
         if fltr is not None:
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
@@ -272,7 +272,7 @@ class Dao(object):
         return self._stoptime2
 
     def hops(self, delta=1, fltr=None, prefetch_trips=True, prefetch_stop_times=False):
-        query = self._session.query(self._stoptime1, self._stoptime2).filter((self._stoptime1.trip_id == self._stoptime2.trip_id) & ((self._stoptime1.stop_sequence + delta) == self._stoptime2.stop_sequence))
+        query = self._session.query(self._stoptime1, self._stoptime2).filter((self._stoptime1.trip_id == self._stoptime2.trip_id) & ((self._stoptime1.stop_sequence + delta) == self._stoptime2.stop_sequence)).distinct()
         if fltr is not None:
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
@@ -292,7 +292,7 @@ class Dao(object):
         return query.get((feed_id, shape_id))
 
     def shapes(self, fltr=None, prefetch_points=True):
-        query = self._session.query(Shape)
+        query = self._session.query(Shape).distinct()
         if fltr is not None:
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
@@ -307,7 +307,7 @@ class Dao(object):
         return query.get((feed_id, fare_id))
 
     def fare_attributes(self, fltr=None, prefetch_fare_rules=True):
-        query = self._session.query(FareAttribute)
+        query = self._session.query(FareAttribute).distinct()
         if fltr is not None:
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
@@ -316,7 +316,7 @@ class Dao(object):
         return query.all()
 
     def fare_rules(self, fltr=None, prefetch_fare_attributes=True):
-        query = self._session.query(FareRule)
+        query = self._session.query(FareRule).distinct()
         if fltr is not None:
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
