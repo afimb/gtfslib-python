@@ -28,7 +28,7 @@ from sqlalchemy.exc import InvalidRequestError
 from gtfslib.converter import _convert_gtfs_model
 from gtfslib.csvgtfs import Gtfs, ZipFileSource
 from gtfslib.model import FeedInfo, Agency, Route, Calendar, CalendarDate, Stop, \
-    Trip, StopTime, Transfer, Shape, Zone, FareAttribute, FareRule
+    Trip, StopTime, Transfer, Shape, Zone, FareAttribute, FareRule, ShapePoint
 from gtfslib.orm import _Orm
 from gtfslib.utils import group_pairs
 
@@ -70,6 +70,10 @@ class Dao(object):
         self._session.delete(obj)
         
     def delete_feed(self, feed_id):
+        self._session.query(FareRule).filter(FareRule.feed_id == feed_id).delete(synchronize_session=False)
+        self._session.query(FareAttribute).filter(FareAttribute.feed_id == feed_id).delete(synchronize_session=False)
+        self._session.query(ShapePoint).filter(ShapePoint.feed_id == feed_id).delete(synchronize_session=False)
+        self._session.query(Shape).filter(Shape.feed_id == feed_id).delete(synchronize_session=False)
         self._session.query(StopTime).filter(StopTime.feed_id == feed_id).delete(synchronize_session=False)
         self._session.query(Trip).filter(Trip.feed_id == feed_id).delete(synchronize_session=False)
         self._session.query(CalendarDate).filter(CalendarDate.feed_id == feed_id).delete(synchronize_session=False)
