@@ -13,7 +13,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
-from gtfslib.utils import ContinousPiecewiseLinearFunc, group_items
+from gtfslib.utils import ContinousPiecewiseLinearFunc, group_items, group_pairs
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -79,6 +79,23 @@ class TestUtils(unittest.TestCase):
                 for a in aa:
                     alist2.append(a)
             self.assertTrue(list(alist) == alist2)
+
+    def test_group_pairs(self):
+
+        pairs = list(group_pairs([ ], 100))
+        self.assertTrue(len(pairs) == 0)
+
+        pairs = list(group_pairs([ ('A', 1), ('A', 2) ], 100))
+        self.assertTrue(len(pairs) == 1)
+        self.assertTrue(pairs == [('A', [1, 2])])
+
+        pairs = list(group_pairs([ ('A', 1), ('B', 2) ], 100))
+        self.assertTrue(len(pairs) == 2)
+        self.assertTrue(pairs == [ ('A', [1]), ('B', [2]) ])
+
+        pairs = list(group_pairs([ ('A', 1), ('B', 2), ('A', 3), ('A', 4) ], 2))
+        self.assertTrue(len(pairs) == 3)
+        self.assertTrue(pairs == [ ('A', [1, 3]), ('A', [4]), ('B', [2]) ])
 
 if __name__ == '__main__':
     unittest.main()
