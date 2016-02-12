@@ -42,8 +42,7 @@ class PluginContext(object):
         return self._dao
 
     def filter_trips(self, prefetch_stop_times=True, prefetch_calendars=True):
-        return self._dao.trips(fltr=self._args.trip_fltr, route_fltr=self._args.route_fltr, calendar_fltr=self._args.calendar_fltr,
-                               prefetch_stop_times=prefetch_stop_times, prefetch_calendars=prefetch_calendars)
+        return self._dao.trips(fltr=self._args.filter, prefetch_stop_times=prefetch_stop_times, prefetch_calendars=prefetch_calendars)
 
 def main():
 
@@ -51,10 +50,7 @@ def main():
     parser.add_argument("database", help="Database to load data from")
     parser.add_argument("plugin", help="Name of plugin to run")
     parser.add_argument('-l', '--list', help="List all available plugins", action="store_true")
-    parser.add_argument('--routes', help="Specify route filter. Examples: --routes=\"Route.route_short_name=='L16'\",  --routes=\"(Route.route_type.in_([Route.TYPE_SUBWAY, Route.TYPE_TRAM])\"", type=str)
-    parser.add_argument('--trips', help="Specify trip filter.", type=str)
-    parser.add_argument('--calendars', help="Specify calendar filter.", type=str)
-    parser.add_argument('--stops', help="Specify stop filter.", type=str)
+    parser.add_argument('--filter', help="Specify object filter. Examples: --filter=\"Stop.stop_name=='FooBar'\",  --filter=\"(Route.route_type.in_([Route.TYPE_SUBWAY, Route.TYPE_TRAM])\"", type=str)
     parser.add_argument('--logsql', help="Enable SQL logging (very verbose)", action="store_true")
 
     args, xargs = parser.parse_known_args()
@@ -80,10 +76,7 @@ def main():
 
     def _evaluate(strarg):
         return None if strarg is None else eval(strarg)
-    args.route_fltr = _evaluate(args.routes)
-    args.trip_fltr = _evaluate(args.trips)
-    args.calendar_fltr = _evaluate(args.calendars)
-    args.stop_fltr = _evaluate(args.stops)
+    args.filter = _evaluate(args.filter)
 
     # TODO Configure logging
     logging.basicConfig(level=logging.INFO)

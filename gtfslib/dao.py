@@ -14,6 +14,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
 from sqlalchemy.orm.util import aliased
+from sqlalchemy.exc import InvalidRequestError
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -46,13 +47,13 @@ class Dao(object):
             # Assume a SQLite file
             connect_url = "sqlite:///%s" % db
         engine = sqlalchemy.create_engine(connect_url, echo=sql_logging)
-        _Orm(engine)
+        self._orm = _Orm(engine)
         Session = sessionmaker(bind=engine)
         self._session = Session()
-        self._stoptime1=aliased(StopTime, name="first_stop_time")
-        self._stoptime2=aliased(StopTime, name="second_stop_time")
-        self._transfer_fromstop=aliased(Stop, name="from_stop")
-        self._transfer_tostop=aliased(Stop, name="to_stop")
+        self._stoptime1 = aliased(StopTime, name="first_stop_time")
+        self._stoptime2 = aliased(StopTime, name="second_stop_time")
+        self._transfer_fromstop = aliased(Stop, name="from_stop")
+        self._transfer_tostop = aliased(Stop, name="to_stop")
 
     def session(self):
         return self._session
@@ -97,6 +98,7 @@ class Dao(object):
     def agencies(self, fltr=None, prefetch_routes=False):
         query = self._session.query(Agency)
         if fltr is not None:
+            query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
         if prefetch_routes:
             query = query.options(subqueryload('routes'))
@@ -124,16 +126,11 @@ class Dao(object):
             query = query.options(subqueryload('sub_stops'))
         return query.get((feed_id, stop_id))
     
-    def stops(self, fltr=None, trip_fltr=None, calendar_fltr=None, prefetch_parent=True, prefetch_substops=True, batch_size=0):
+    def stops(self, fltr=None, prefetch_parent=True, prefetch_substops=True, batch_size=0):
         query = self._session.query(Stop)
         if fltr is not None:
+            query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
-        if trip_fltr is not None or calendar_fltr is not None:
-            query = query.join(StopTime).join(Trip)
-        if trip_fltr is not None:
-            query = query.filter(trip_fltr)
-        if calendar_fltr is not None:
-            query = query.join(Calendar).join(CalendarDate).filter(calendar_fltr)
         if prefetch_parent:
             query = query.options(subqueryload('parent_station'))
         if prefetch_substops:
@@ -171,18 +168,11 @@ class Dao(object):
     def route(self, route_id, feed_id=""):
         return self._session.query(Route).get((feed_id, route_id))
 
-    def routes(self, fltr=None, trip_fltr=None, stoptime_fltr=None, calendar_fltr=None, prefetch_trips=False):
+    def routes(self, fltr=None, prefetch_trips=False):
         query = self._session.query(Route)
         if fltr is not None:
+            query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
-        if trip_fltr is not None or calendar_fltr is not None or stoptime_fltr is not None:
-            query = query.join(Trip)
-        if trip_fltr is not None:
-            query = query.filter(trip_fltr)
-        if calendar_fltr is not None:
-            query = query.join(Calendar).join(CalendarDate).filter(calendar_fltr)
-        if stoptime_fltr is not None:
-            query = query.join(StopTime).filter(stoptime_fltr)
         if prefetch_trips:
             query = query.options(subqueryload('trips'))
         return query.all()
@@ -203,7 +193,8 @@ class Dao(object):
     def calendars(self, fltr=None, prefetch_dates=True, prefetch_trips=False):
         query = self._session.query(Calendar)
         if fltr is not None:
-            query = query.join(CalendarDate).filter(fltr)
+            query = _AutoJoiner(self._orm, query, fltr).autojoin()
+            query = query.filter(fltr)
         if prefetch_dates:
             query = query.options(subqueryload('dates'))
         if prefetch_trips:
@@ -213,6 +204,7 @@ class Dao(object):
     def calendar_dates(self, fltr=None, prefetch_calendars=True, prefetch_trips=False):
         query = self._session.query(CalendarDate)
         if fltr is not None:
+            query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
         if prefetch_calendars:
             query = query.options(subqueryload('calendar'))
@@ -229,7 +221,7 @@ class Dao(object):
     def trips(self, fltr=None, prefetch_stop_times=True, prefetch_routes=False, prefetch_stops=False, prefetch_calendars=False, batch_size=0):
         query = self._session.query(Trip)
         if fltr is not None:
-            query = self._dynamically_join(fltr, query, do_trips=False)
+            query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
         if prefetch_stops:
             prefetch_stop_times = True
@@ -245,18 +237,11 @@ class Dao(object):
         query = query.order_by(Trip.feed_id, Trip.trip_id)
         return self._page_query(query, batch_size)
 
-    def stoptimes(self, fltr=None, trip_fltr=None, route_fltr=None, calendar_fltr=None, prefetch_trips=True, prefetch_stop_times=False, batch_size=0):
+    def stoptimes(self, fltr=None, prefetch_trips=True, prefetch_stop_times=False, batch_size=0):
         query = self._session.query(StopTime)
         if fltr is not None:
+            query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
-        if trip_fltr is not None or route_fltr is not None or calendar_fltr is not None:
-            query = query.join(Trip)
-        if trip_fltr is not None:
-            query = query.filter(trip_fltr)
-        if route_fltr is not None:
-            query = query.join(Route).filter(route_fltr)
-        if calendar_fltr is not None:
-            query = query.join(Calendar).join(CalendarDate).filter(calendar_fltr)
         if prefetch_stop_times:
             prefetch_trips = True
         if prefetch_trips:
@@ -273,18 +258,11 @@ class Dao(object):
     def hop_second(self):
         return self._stoptime2
 
-    def hops(self, delta=1, fltr=None, trip_fltr=None, route_fltr=None, calendar_fltr=None, prefetch_trips=True, prefetch_stop_times=False):
+    def hops(self, delta=1, fltr=None, prefetch_trips=True, prefetch_stop_times=False):
         query = self._session.query(self._stoptime1, self._stoptime2).filter((self._stoptime1.trip_id == self._stoptime2.trip_id) & ((self._stoptime1.stop_sequence + delta) == self._stoptime2.stop_sequence))
         if fltr is not None:
+            query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
-        if trip_fltr is not None or route_fltr is not None or calendar_fltr is not None:
-            query = query.join(Trip)
-        if trip_fltr is not None:
-            query = query.filter(trip_fltr)
-        if route_fltr is not None:
-            query = query.join(Route).filter(route_fltr)
-        if calendar_fltr is not None:
-            query = query.join(Calendar).filter(calendar_fltr)
         if prefetch_stop_times:
             prefetch_trips = True
         if prefetch_trips:
@@ -300,16 +278,11 @@ class Dao(object):
             query = query.options(subqueryload('points'))
         return query.get((feed_id, shape_id))
 
-    def shapes(self, fltr=None, trip_fltr=None, route_fltr=None, prefetch_points=True):
+    def shapes(self, fltr=None, prefetch_points=True):
         query = self._session.query(Shape)
         if fltr is not None:
+            query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
-        if trip_fltr is not None or route_fltr is not None:
-            query = query.join(Trip)
-        if trip_fltr is not None:
-            query = query.filter(trip_fltr)
-        if route_fltr is not None:
-            query = query.join(Route).filter(route_fltr)
         if prefetch_points:
             query = query.options(subqueryload('points'))
         return query.all()
@@ -320,24 +293,20 @@ class Dao(object):
             query = query.options(subqueryload('fare_rules'))
         return query.get((feed_id, fare_id))
 
-    def fare_attributes(self, fltr=None, rule_fltr=None, prefetch_fare_rules=True):
+    def fare_attributes(self, fltr=None, prefetch_fare_rules=True):
         query = self._session.query(FareAttribute)
         if fltr is not None:
+            query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
-        if rule_fltr is not None:
-            query = query.join(FareRule)
-            query = query.filter(rule_fltr)
         if prefetch_fare_rules:
             query = query.options(subqueryload('fare_rules'))
         return query.all()
 
-    def fare_rules(self, fltr=None, fareattr_fltr=None, prefetch_fare_attributes=True):
+    def fare_rules(self, fltr=None, prefetch_fare_attributes=True):
         query = self._session.query(FareRule)
         if fltr is not None:
+            query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
-        if fareattr_fltr is not None:
-            query = query.join(FareAttribute)
-            query = query.filter(fareattr_fltr)
         if prefetch_fare_attributes:
             query = query.options(subqueryload('fare_attribute'))
         return query.all()
@@ -364,35 +333,97 @@ class Dao(object):
         else:
             return _page_generator(query, batch_size)
 
-    def _dynamically_join(self, fltr, query, do_stops=True, do_routes=True, do_trips=True, do_calendars=True, do_stop_times=True):
-        TABLE_NAMES = [ "stops", "routes", "trips", "calendar_dates", "stop_times" ]
-        do_join = [ False for tbl in TABLE_NAMES ]
-        def _recurse_inspect(fltr_node):
-            if hasattr(fltr_node, "table"):
-                for i in range(0, len(TABLE_NAMES)):
-                    if fltr_node.table.name == TABLE_NAMES[i]:
-                        do_join[i] = True
-            for child in fltr_node.get_children():
-                _recurse_inspect(child)
-        _recurse_inspect(fltr)
-        if do_join[0] and do_stops:
-            query = query.join(Stop)
-        if do_join[1] and do_routes:
-            query = query.join(Route)
-        if do_join[2] and do_trips:
-            query = query.join(Trip)
-        if do_join[3] and do_calendars:
-            query = query.join(Calendar).join(CalendarDate)
-        if do_join[4] and do_stop_times:
-            query = query.join(StopTime)
-        return query
-
     def load_gtfs(self, filename, feed_id="", lenient=False, **kwargs):
         @transactional(self.session())
         def _do_load_gtfs():
             with Gtfs(ZipFileSource(filename)).load() as gtfs:
                 _convert_gtfs_model(feed_id, gtfs, self, lenient, **kwargs)
         _do_load_gtfs()
+
+class _AutoJoiner(object):
+
+    def __init__(self, orm, query, fltr):
+        self._query = query
+        self._fltr = fltr
+        self._orm = orm
+
+    def autojoin(self):
+        # 1. Determine the set of classes used in the query
+        #    Usually, only one.
+        query_classes = set()
+        for col_desc in self._query.column_descriptions:
+            query_classes.add(col_desc['type'])
+        # 2. Determine the set of classes used in the filter
+        self._join_tables = set()
+        self._recurse_inspect(self._fltr)
+        join_classes = set()
+        for tbl in self._join_tables:
+            join_class = self._orm.class_for_table(tbl)
+            if join_class is not None:
+                join_classes.add(join_class)
+            else:
+                # TODO Should we handle this?
+                # print("Unknown class for table %s" % tbl)
+                pass
+        for clazz in query_classes:
+            if clazz in join_classes:
+                join_classes.remove(clazz)
+        # 3. Compute all classes (query and join)
+        all_classes = set()
+        all_classes |= query_classes
+        all_classes |= join_classes
+
+        # 4. Ensure the join are connected
+        #    Here we use the fact that the relationship graph has only 4 branches:
+        #    Branch 1 is agency-route-trip
+        #    Branch 2 is dates-calendar-trip
+        #    Branch 3 is stops-stoptimes-trip
+        #    Branch 4 is shape-trip
+        #    With all branches in a star-like configuration with trip in the middle.
+        branch1 = Agency in all_classes or Route in all_classes
+        branch2 = CalendarDate in all_classes or Calendar in all_classes
+        branch3 = Stop in all_classes or StopTime in all_classes
+        branch4 = Shape in all_classes
+        n_branches = sum(branch for branch in (branch1, branch2, branch3, branch4))
+        if Trip not in all_classes and n_branches > 1:
+            join_classes.add(Trip)
+            all_classes.add(Trip)
+        if Trip in all_classes:
+            # Connect branch leafs to trip eventually
+            if Agency in all_classes and not Route in all_classes:
+                join_classes.add(Route)
+            if CalendarDate in all_classes and not Calendar in all_classes:
+                join_classes.add(Calendar)
+            if Stop in all_classes and not StopTime in all_classes:
+                join_classes.add(StopTime)
+
+        # The order of join is important. We could have devised
+        # a more generic approach by computing the paths between
+        # each join to the query class, but since the number of
+        # classes to join is really small we use a brute-force
+        # approach: try to join each class in turn and if that
+        # fails, re-queue it at the end and try another one...
+        # Sort the classes in any order for stability of return values
+        classes_to_join = sorted([ clazz for clazz in join_classes ], key=lambda clazz: str(clazz))
+        timeout = 0
+        while classes_to_join:
+            clazz = classes_to_join.pop(0)
+            timeout += 1
+            try:
+                self._query = self._query.join(clazz)
+            except InvalidRequestError:
+                if timeout > 10:
+                    raise
+                # Try later on
+                classes_to_join.append(clazz)
+
+        return self._query
+
+    def _recurse_inspect(self, fltr_node):
+        if hasattr(fltr_node, "table"):
+            self._join_tables.add(fltr_node.table.name)
+        for child in fltr_node.get_children():
+            self._recurse_inspect(child)
 
 def transactional(session):
     def wrap(func):

@@ -197,9 +197,8 @@ class TestDummyGtfs(unittest.TestCase):
         from_time = gtfstime(10, 00)
         to_time = gtfstime(14, 00)
         departures = dao.stoptimes(
-                    fltr=(StopTime.stop == porte_bourgogne) & (StopTime.departure_time >= from_time) & (StopTime.departure_time <= to_time),
-                    route_fltr=Route.route_type == Route.TYPE_BUS,
-                    calendar_fltr=func.date(CalendarDate.date) == july4.date,
+                    fltr=(StopTime.stop == porte_bourgogne) & (StopTime.departure_time >= from_time) & (StopTime.departure_time <= to_time)
+                    & (Route.route_type == Route.TYPE_BUS) & (func.date(CalendarDate.date) == july4.date),
                     prefetch_trips=True)
 
         n = 0
@@ -216,13 +215,12 @@ class TestDummyGtfs(unittest.TestCase):
         # Get the list of stops used by some route:
         # 1) All-year round
         route_red = dao.route("BR")
-        stoplist_all = list(dao.stops(trip_fltr=Trip.route == route_red))
+        stoplist_all = list(dao.stops(fltr=Trip.route == route_red))
         # 2) Only in january
         from_date = CalendarDate.ymd(2016, 1, 1)
         to_date = CalendarDate.ymd(2016, 1, 31)
         stoplist_jan = list(dao.stops(
-                    trip_fltr=Trip.route == route_red,
-                    calendar_fltr=(func.date(CalendarDate.date) >= from_date.date) & (func.date(CalendarDate.date) <= to_date.date)))
+                    fltr=(Trip.route == route_red) & (func.date(CalendarDate.date) >= from_date.date) & (func.date(CalendarDate.date) <= to_date.date)))
         # Now, make some tests
         self.assertTrue(len(stoplist_all) > 5)
         self.assertTrue(plage in stoplist_all)
@@ -232,7 +230,7 @@ class TestDummyGtfs(unittest.TestCase):
         self.assertTrue(set(stoplist) == set(stoplist_jan))
 
         # Get all routes passing by the set of stops
-        routes = dao.routes(stoptime_fltr=or_(StopTime.stop == stop for stop in stoplist_jan))
+        routes = dao.routes(fltr=or_(StopTime.stop == stop for stop in stoplist_jan))
         stopset = set()
         for route in routes:
             for trip in route.trips:
