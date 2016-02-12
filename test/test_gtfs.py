@@ -90,7 +90,7 @@ class TestGtfs(unittest.TestCase):
             self.assertTrue(st1.stop_sequence + 2 == st2.stop_sequence)
             self.assertTrue(st1.trip == st2.trip)
             nhops2 += 1
-        ntrips = len(dao.trips())
+        ntrips = len(list(dao.trips()))
         # Assume all trips have len > 2
         self.assertTrue(nhops == nhops2 + ntrips)
 

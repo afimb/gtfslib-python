@@ -45,7 +45,7 @@ class TestMiniGtfs(unittest.TestCase):
         self.assertTrue(len(dao.routes()) == 4)
         self.assertTrue(len(dao.stops()) == 12)
         self.assertTrue(len(dao.calendars()) == 2)
-        self.assertTrue(len(dao.trips()) == 104)
+        self.assertTrue(len(list(dao.trips())) == 104)
         self.assertTrue(len(dao.stoptimes()) == 500)
         self.assertTrue(len(dao.fare_attributes()) == 2)
         self.assertTrue(len(dao.fare_rules()) == 4)

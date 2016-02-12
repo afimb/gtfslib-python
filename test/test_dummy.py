@@ -43,7 +43,7 @@ SQL_LOG = False
 class TestDummyGtfs(unittest.TestCase):
 
     def test_gtfs_data(self):
-        dao = Dao(DAO_URL, sql_logging=SQL_LOG)
+        dao = Dao(DAO_URL, sql_logging=False)
         dao.load_gtfs(DUMMY_GTFS)
 
         # Check feed
@@ -179,8 +179,8 @@ class TestDummyGtfs(unittest.TestCase):
         self.assertTrue(len(feed_b.stops) * 2 == len(dao.stops()))
         self.assertTrue(len(feed_a.calendars) * 2 == len(dao.calendars()))
         self.assertTrue(len(feed_b.calendars) * 2 == len(dao.calendars()))
-        self.assertTrue(len(feed_a.trips) * 2 == len(dao.trips()))
-        self.assertTrue(len(feed_b.trips) * 2 == len(dao.trips()))
+        self.assertTrue(len(feed_a.trips) * 2 == len(list(dao.trips())))
+        self.assertTrue(len(feed_b.trips) * 2 == len(list(dao.trips())))
 
     def test_complex_queries(self):
         dao = Dao(DAO_URL, sql_logging=SQL_LOG)

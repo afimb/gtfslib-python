@@ -13,22 +13,24 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
-from sqlalchemy.orm.util import aliased
-from sqlalchemy.exc import InvalidRequestError
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
 
+from inspect import isclass
+
 import sqlalchemy
 from sqlalchemy.orm import subqueryload
 from sqlalchemy.orm.session import sessionmaker
+from sqlalchemy.orm.util import aliased
+from sqlalchemy.exc import InvalidRequestError
 
 from gtfslib.converter import _convert_gtfs_model
 from gtfslib.csvgtfs import Gtfs, ZipFileSource
 from gtfslib.model import FeedInfo, Agency, Route, Calendar, CalendarDate, Stop, \
     Trip, StopTime, Transfer, Shape, Zone, FareAttribute, FareRule
 from gtfslib.orm import _Orm
-
+from gtfslib.utils import group_pairs
 
 class Dao(object):
     """
@@ -218,24 +220,29 @@ class Dao(object):
             query = query.options(subqueryload('stop_times'))
         return query.get((feed_id, trip_id))
     
-    def trips(self, fltr=None, prefetch_stop_times=True, prefetch_routes=False, prefetch_stops=False, prefetch_calendars=False, batch_size=0):
-        query = self._session.query(Trip)
+    def trips(self, fltr=None, prefetch_stop_times=True, prefetch_routes=False, prefetch_stops=False, prefetch_calendars=False, batch_size=1000):
+        idquery = self._session.query(Trip.feed_id, Trip.trip_id)
         if fltr is not None:
-            query = _AutoJoiner(self._orm, query, fltr).autojoin()
-            query = query.filter(fltr)
-        if prefetch_stops:
-            prefetch_stop_times = True
-        if prefetch_stop_times:
-            loadopt = subqueryload('stop_times')
+            idquery = _AutoJoiner(self._orm, idquery, fltr).autojoin()
+            idquery = idquery.filter(fltr)
+        # Only query IDs first
+        tripids = idquery.all()
+        def query_factory():
+            query = self._session.query(Trip)
+            _prefetch_stop_times = prefetch_stop_times
             if prefetch_stops:
-                loadopt = loadopt.subqueryload('stop')
-            query = query.options(loadopt)
-        if prefetch_routes:
-            query = query.options(subqueryload('route'))
-        if prefetch_calendars:
-            query = query.options(subqueryload('calendar'))
-        query = query.order_by(Trip.feed_id, Trip.trip_id)
-        return self._page_query(query, batch_size)
+                _prefetch_stop_times = True
+            if _prefetch_stop_times:
+                loadopt = subqueryload('stop_times')
+                if prefetch_stops:
+                    loadopt = loadopt.subqueryload('stop')
+                query = query.options(loadopt)
+            if prefetch_routes:
+                query = query.options(subqueryload('route'))
+            if prefetch_calendars:
+                query = query.options(subqueryload('calendar'))
+            return query
+        return self._page_query_2(query_factory, Trip.feed_id, Trip.trip_id, tripids, batch_size)
 
     def stoptimes(self, fltr=None, prefetch_trips=True, prefetch_stop_times=False, batch_size=0):
         query = self._session.query(StopTime)
@@ -333,6 +340,16 @@ class Dao(object):
         else:
             return _page_generator(query, batch_size)
 
+    def _page_query_2(self, query_factory, item_feed_id_column, item_id_column, ids, batch_size):
+        if batch_size <= 0:
+            batch_size = 1000
+        for feed_id, item_ids in group_pairs(ids, batch_size):
+            query = query_factory()
+            query = query.filter((item_feed_id_column == feed_id) & (item_id_column.in_(item_ids)))
+            batch = query.all()
+            for item in batch:
+                yield item
+
     def load_gtfs(self, filename, feed_id="", lenient=False, **kwargs):
         @transactional(self.session())
         def _do_load_gtfs():
@@ -343,16 +360,27 @@ class Dao(object):
 class _AutoJoiner(object):
 
     def __init__(self, orm, query, fltr):
+        self._orm = orm
         self._query = query
         self._fltr = fltr
-        self._orm = orm
 
     def autojoin(self):
         # 1. Determine the set of classes used in the query
         #    Usually, only one.
         query_classes = set()
         for col_desc in self._query.column_descriptions:
-            query_classes.add(col_desc['type'])
+            _type = col_desc.get('type')
+            if isclass(_type):
+                clazz = _type
+            else:
+                expr = col_desc.get('expr')
+                if hasattr(expr, 'class_'):
+                    clazz = expr.class_
+                else:
+                    print("*** TODO Unrecognized class for expression: %s" % col_desc)
+                    clazz = None
+            if clazz is not None:
+                query_classes.add(clazz)
         # 2. Determine the set of classes used in the filter
         self._join_tables = set()
         self._recurse_inspect(self._fltr)
