@@ -13,6 +13,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
+import pyqtree
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -96,3 +97,74 @@ class RectangularArea(object):
                 self.__class__.__name__, self.min_lat, self.min_lon, self.max_lat, self.max_lon)
         
 # TODO Create circular area (=center+radius)?
+
+
+class SpatialClusterizer(object):
+    """This class is meant to group stops in clusters based on distance proximity.
+       It will group all stops that are nearer than D0 meters."""
+
+    def __init__(self, D0):
+        self._D0 = 1. * D0
+        bbox = (-180, -90, 180, 90)
+        self._spidx = pyqtree.Index(bbox)
+        self._points = []
+        self._clusters = None
+        self._cluster_values = []
+
+    def add_point(self, p):
+        if self._clusters:
+            raise Exception("Can't add point after clusterized has been called")
+        self._spidx.insert(p, (p.lon(), p.lat(),
+                               p.lon(), p.lat()))
+        self._points.append(p)
+
+    def add_points(self, ps):
+        for p in ps:
+            self.add_point(p)
+
+    def clusterize(self):
+        self._clusters = {}
+        for p in self._points:
+            self._clusters[p] = set([p])
+        for p1 in self._points:
+            # Compute bounds in lat,lon degree of D0 square around stop
+            cos_lat = math.cos(math.radians(p.lat()))
+            dlon = math.degrees(self._D0 / EARTH_RADIUS * cos_lat)
+            dlat = math.degrees(self._D0 / EARTH_RADIUS)
+            bbox = (p1.lon() - dlon, p1.lat() - dlat,
+                    p1.lon() + dlon, p1.lat() + dlat)
+            nearby = self._spidx.intersect(bbox)
+            for p2 in nearby:
+                d = orthodromic_distance(p1, p2)
+                if d > self._D0:
+                    continue
+                c1 = self._clusters.get(p1, set())
+                c2 = self._clusters.get(p2, set())
+                if c1 is c2:
+                    # Already same cluster
+                    continue
+                # Merge cluster c1 and c2
+                c3 = c1 | c2
+                for p in c3:
+                    self._clusters[p] = c3
+        seen_points = set()
+        for k, cluster in self._clusters.items():
+            for p in cluster:
+                break;
+            if p in seen_points:
+                continue
+            self._cluster_values.append(cluster)
+            seen_points.add(p)
+
+    def cluster_of(self, p):
+        return self._clusters.get(p)
+
+    def in_same_cluster(self, p1, p2):
+        c1 = self._clusters.get(p1)
+        c2 = self._clusters.get(p2)
+        if c1 is None or c2 is None:
+            return False
+        return c1 is c2
+
+    def clusters(self):
+        return self._cluster_values
