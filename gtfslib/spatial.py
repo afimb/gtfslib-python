@@ -98,6 +98,16 @@ class RectangularArea(object):
         
 # TODO Create circular area (=center+radius)?
 
+class SpatialCluster(object):
+
+    def __init__(self, ident, items):
+        self.id = ident
+        self.items = items
+
+    def __repr__(self):
+        return "<%s(#%d, %s)>" % (
+                self.__class__.__name__, self.id, self.items)
+
 
 class SpatialClusterizer(object):
     """This class is meant to group stops in clusters based on distance proximity.
@@ -108,8 +118,8 @@ class SpatialClusterizer(object):
         bbox = (-180, -90, 180, 90)
         self._spidx = pyqtree.Index(bbox)
         self._points = []
+        self._clusters_by_item = None
         self._clusters = None
-        self._cluster_values = None
 
     def add_point(self, p):
         if self._points is None:
@@ -125,9 +135,9 @@ class SpatialClusterizer(object):
             self.add_point(p)
 
     def clusterize(self):
-        self._clusters = {}
+        clusters_by_item = {}
         for p in self._points:
-            self._clusters[p] = set([p])
+            clusters_by_item[p] = set([p])
         for p1 in self._points:
             # Compute bounds in lat,lon degree of D0 square around stop
             cos_lat = math.cos(math.radians(p.lat()))
@@ -140,36 +150,45 @@ class SpatialClusterizer(object):
                 d = orthodromic_distance(p1, p2)
                 if d > self._D0:
                     continue
-                c1 = self._clusters.get(p1, set())
-                c2 = self._clusters.get(p2, set())
+                c1 = clusters_by_item.get(p1)
+                c2 = clusters_by_item.get(p2)
                 if c1 is c2:
                     # Already same cluster
                     continue
                 # Merge cluster c1 and c2
                 c3 = c1 | c2
                 for p in c3:
-                    self._clusters[p] = c3
+                    clusters_by_item[p] = c3
         seen_points = set()
-        self._cluster_values = []
-        for _k, cluster in self._clusters.items():
+        self._clusters_by_item = {}
+        self._clusters = []
+        cluster_id = 0
+        for _k, cluster in clusters_by_item.items():
+            to_process = True
             for p in cluster:
-                break;
-            if p in seen_points:
+                if p in seen_points:
+                    to_process = False
+                    break
+                seen_points.add(p)
+            if not to_process:
                 continue
-            self._cluster_values.append(cluster)
-            seen_points.add(p)
+            spatial_cluster = SpatialCluster(cluster_id, cluster)
+            cluster_id += 1
+            for p in cluster:
+                self._clusters_by_item[p] = spatial_cluster
+            self._clusters.append(spatial_cluster)
         # None needed anymore
         self._points = None
 
     def cluster_of(self, p):
-        return self._clusters.get(p)
+        return self._clusters_by_item.get(p)
 
     def in_same_cluster(self, p1, p2):
-        c1 = self._clusters.get(p1)
-        c2 = self._clusters.get(p2)
+        c1 = self._clusters_by_item.get(p1)
+        c2 = self._clusters_by_item.get(p2)
         if c1 is None or c2 is None:
             return False
         return c1 is c2
 
     def clusters(self):
-        return self._cluster_values
+        return self._clusters
