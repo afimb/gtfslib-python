@@ -13,7 +13,8 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
-from gtfslib.spatial import orthodromic_distance, orthodromic_seg_distance
+from gtfslib.spatial import orthodromic_distance, orthodromic_seg_distance,\
+    SpatialClusterizer
 import math
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
@@ -111,6 +112,30 @@ class TestSpatial(unittest.TestCase):
         dbag, dbag2 = orthodromic_seg_distance(b, a, g)
         self.assertAlmostEqual(dbag / 60 * math.sqrt(2), self._NAUTICAL_MILE, 0)
         self.assertAlmostEqual(dbag2 / 60, self._NAUTICAL_MILE / 2 * math.sqrt(2), 0)
+
+    def test_clusterizer(self):
+
+        p1 = SimplePoint(45, 0)
+        p2 = SimplePoint(45 + 1.001/60, 0)
+        p3 = SimplePoint(45 - 0.999/60, 0)
+        sc = SpatialClusterizer(self._NAUTICAL_MILE)
+        sc.add_points((p1, p2, p3))
+        sc.clusterize()
+        self.assertFalse(sc.in_same_cluster(p1, p2))
+        self.assertTrue(sc.in_same_cluster(p1, p3))
+        self.assertFalse(sc.in_same_cluster(p2, p3))
+        self.assertTrue(len(sc.clusters()) == 2)
+
+        p1 = SimplePoint(45, 0)
+        p2 = SimplePoint(45 + 2*0.8/60, 0)
+        p3 = SimplePoint(45 + 1*0.8/60, 0)
+        sc = SpatialClusterizer(self._NAUTICAL_MILE)
+        sc.add_points((p1, p2, p3))
+        sc.clusterize()
+        self.assertTrue(sc.in_same_cluster(p1, p2))
+        self.assertTrue(sc.in_same_cluster(p1, p3))
+        self.assertTrue(sc.in_same_cluster(p2, p3))
+        self.assertTrue(len(sc.clusters()) == 1)
 
 if __name__ == '__main__':
     unittest.main()
