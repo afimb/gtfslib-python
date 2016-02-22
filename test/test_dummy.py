@@ -26,7 +26,7 @@ from sqlalchemy.sql.functions import func
 from gtfslib.dao import Dao
 from gtfslib.model import CalendarDate, Route, Calendar, Stop, \
     Trip, StopTime
-from gtfslib.spatial import RectangularArea
+from gtfslib.spatial import RectangularArea, SpatialClusterizer
 from gtfslib.utils import gtfstime
 
 
@@ -267,6 +267,50 @@ class TestDummyGtfs(unittest.TestCase):
             self.assertTrue(date >= from_date.as_date())
             self.assertTrue(date <= to_date.as_date())
             self.assertTrue(trip_count > 0)
+
+    def test_clusterizer(self):
+        dao = Dao(DAO_URL, sql_logging=SQL_LOG)
+        dao.load_gtfs(DUMMY_GTFS)
+
+        # Merge stops closer than 300m together
+        sc = SpatialClusterizer(300.0)
+        for stop in dao.stops():
+            sc.add_point(stop)
+        sc.clusterize()
+
+        # for cluster in sc.clusters():
+        #    print("---CLUSTER: %d stops" % (len(cluster)))
+        #    for stop in cluster:
+        #        print("%s %s" % (stop.stop_id, stop.stop_name))
+
+        gare1 = dao.stop("GBSJT")
+        gare2 = dao.stop("GBSJ")
+        gare3 = dao.stop("GBSJB")
+        self.assertTrue(sc.in_same_cluster(gare1, gare2))
+        self.assertTrue(sc.in_same_cluster(gare1, gare3))
+        self.assertTrue(sc.in_same_cluster(gare2, gare3))
+
+        bq = dao.stop("BQ")
+        bq1 = dao.stop("BQA")
+        bq2 = dao.stop("BQD")
+        self.assertTrue(sc.in_same_cluster(bq, bq1))
+        self.assertTrue(sc.in_same_cluster(bq, bq2))
+
+        bs = dao.stop("BS")
+        bs1 = dao.stop("BS1")
+        bs2 = dao.stop("BS2")
+        self.assertTrue(sc.in_same_cluster(bs, bs1))
+        self.assertTrue(sc.in_same_cluster(bs, bs2))
+
+        self.assertFalse(sc.in_same_cluster(gare1, bq))
+        self.assertFalse(sc.in_same_cluster(gare1, bs))
+        self.assertFalse(sc.in_same_cluster(gare3, bs2))
+
+        bjb = dao.stop("BJB")
+        self.assertFalse(sc.in_same_cluster(bjb, gare1))
+        self.assertFalse(sc.in_same_cluster(bjb, bs))
+        self.assertFalse(sc.in_same_cluster(bjb, bq))
+
 
 if __name__ == '__main__':
     unittest.main()
