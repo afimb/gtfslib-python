@@ -109,11 +109,13 @@ class SpatialClusterizer(object):
         self._spidx = pyqtree.Index(bbox)
         self._points = []
         self._clusters = None
-        self._cluster_values = []
+        self._cluster_values = None
 
     def add_point(self, p):
-        if self._clusters:
-            raise Exception("Can't add point after clusterized has been called")
+        if self._points is None:
+            # Well, technically we could, but at the expense of some code complexity.
+            # As far as I understand, it's not really needed to clusterize on the fly.
+            raise Exception("Can't add point after clusterize() has been called")
         self._spidx.insert(p, (p.lon(), p.lat(),
                                p.lon(), p.lat()))
         self._points.append(p)
@@ -148,13 +150,16 @@ class SpatialClusterizer(object):
                 for p in c3:
                     self._clusters[p] = c3
         seen_points = set()
-        for k, cluster in self._clusters.items():
+        self._cluster_values = []
+        for _k, cluster in self._clusters.items():
             for p in cluster:
                 break;
             if p in seen_points:
                 continue
             self._cluster_values.append(cluster)
             seen_points.add(p)
+        # None needed anymore
+        self._points = None
 
     def cluster_of(self, p):
         return self._clusters.get(p)
