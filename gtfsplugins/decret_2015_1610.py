@@ -23,11 +23,7 @@ from gtfslib.utils import fmttime
 "Cf. plugin pour la documentation"
 def decret_2015_1610(trips):
 
-    if len(trips) == 0:
-        print("Aucun voyage, impossible de calculer.")
-        return None
-
-    print("Calcul decret 2015 1610 sur %d voyages." % (len(trips)))
+    print("Calcul decret 2015 1610.")
 
     print("Calcul de l'espacement moyen des arrêts...")
     espacement_moyen = 0
