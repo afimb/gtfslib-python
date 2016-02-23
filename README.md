@@ -15,7 +15,7 @@ Download and install the lib:
 
 	$ git clone git@github.com:afimb/gtfslib-python.git
 	$ cd gtfslib-python
-	$ pip install
+	$ pip install .
 	$ gtfsdbloader --help
 
 ## Usage
