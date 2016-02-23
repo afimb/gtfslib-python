@@ -205,11 +205,10 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         if n_feedinfo > 1:
             logger.error("Feed info should be unique if defined. Taking first one." % (n_feedinfo))
             break
-        fval = vars(feedinfo)
         # TODO Automatically compute from calendar range if missing?
-        fval['feed_start_date'] = _todate(fval.get('feed_start_date'))
-        fval['feed_end_date'] = _todate(fval.get('feed_end_date'))
-        feedinfo2 = FeedInfo(feed_id, **fval)
+        feedinfo['feed_start_date'] = _todate(feedinfo.get('feed_start_date'))
+        feedinfo['feed_end_date'] = _todate(feedinfo.get('feed_end_date'))
+        feedinfo2 = FeedInfo(feed_id, **feedinfo)
     if feedinfo2 is None:
         # Optional, generate empty feed info
         feedinfo2 = FeedInfo(feed_id)
@@ -222,11 +221,10 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     single_agency = None
     agency_ids = set()
     for agency in gtfs.agencies():
-        aval = vars(agency)
         # agency_id is optional only if we have a single agency
-        if n_agencies == 0 and aval.get('agency_id') is None:
-            aval['agency_id'] = ''
-        agency2 = Agency(feed_id, **aval)
+        if n_agencies == 0 and agency.get('agency_id') is None:
+            agency['agency_id'] = ''
+        agency2 = Agency(feed_id, **agency)
         if n_agencies == 0:
             single_agency = agency2
         else:
@@ -238,19 +236,18 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     logger.info("Imported %d agencies" % n_agencies)
 
     def import_stop(stop, stoptype, zone_ids, item_ids, station_ids=None):
-        sval = vars(stop)
-        zone_id = sval.get('zone_id')
+        zone_id = stop.get('zone_id')
         if zone_id and zone_id not in zone_ids:
             # Lazy-creation of zone
             zone = Zone(feed_id, zone_id)
             zone_ids.add(zone_id)
             dao.add(zone)
-        sval['location_type'] = _toint(sval.get('location_type'), Stop.TYPE_STOP)
-        if sval['location_type'] != stoptype:
+        stop['location_type'] = _toint(stop.get('location_type'), Stop.TYPE_STOP)
+        if stop['location_type'] != stoptype:
             return
-        sval['wheelchair_boarding'] = _toint(sval.get('wheelchair_boarding'), Stop.WHEELCHAIR_UNKNOWN)
-        lat = _tofloat(sval.get('stop_lat'), None)
-        lon = _tofloat(sval.get('stop_lon'), None)
+        stop['wheelchair_boarding'] = _toint(stop.get('wheelchair_boarding'), Stop.WHEELCHAIR_UNKNOWN)
+        lat = _tofloat(stop.get('stop_lat'), None)
+        lon = _tofloat(stop.get('stop_lon'), None)
         if lat is None or lon is None:
             if lenient:
                 logger.error("Missing lat/lon for '%s', set to default (0,0)" % (stop,))
@@ -260,19 +257,19 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
                     lon = 0
             else:
                 raise ValueError("Missing mandatory lat/lon for '%s'." % (stop,))
-        sval['stop_lat'] = lat
-        sval['stop_lon'] = lon
+        stop['stop_lat'] = lat
+        stop['stop_lon'] = lon
         # This field has been renamed for consistency
-        parent_id = sval.get('parent_station')
-        sval['parent_station_id'] = parent_id if parent_id else None
+        parent_id = stop.get('parent_station')
+        stop['parent_station_id'] = parent_id if parent_id else None
         if parent_id and station_ids and parent_id not in station_ids:
             if lenient:
                 logger.error("Parent station ID '%s' in '%s' is invalid, resetting." % (parent_id, stop))
-                sval['parent_station_id'] = None
+                stop['parent_station_id'] = None
             else:
                 raise KeyError("Parent station ID '%s' in '%s' is invalid." % (parent_id, stop))
-        sval.pop('parent_station', None)
-        stop2 = Stop(feed_id, **sval)
+        stop.pop('parent_station', None)
+        stop2 = Stop(feed_id, **stop)
         dao.add(stop2)
         item_ids.add(stop2.stop_id)
 
@@ -293,10 +290,9 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     logger.info("Importing transfers...")
     n_transfers = 0
     for transfer in gtfs.transfers():
-        tval = vars(transfer)
-        from_stop_id = tval.get('from_stop_id')
-        to_stop_id = tval.get('to_stop_id')
-        tval['transfer_type'] = _toint(tval.get('transfer_type'), 0)
+        from_stop_id = transfer.get('from_stop_id')
+        to_stop_id = transfer.get('to_stop_id')
+        transfer['transfer_type'] = _toint(transfer.get('transfer_type'), 0)
         for stop_id in (from_stop_id, to_stop_id):
             if stop_id not in station_ids and stop_id not in stop_ids:
                 if lenient:
@@ -304,8 +300,8 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
                     continue
                 else:
                     raise KeyError("Stop ID '%s' in '%s' is invalid." % (stop_id, transfer))
-        transfer = Transfer(feed_id, **tval)
-        dao.add(transfer)
+        transfer2 = Transfer(feed_id, **transfer)
+        dao.add(transfer2)
     dao.flush()
     logger.info("Imported %d transfers" % (n_transfers))
     
@@ -313,19 +309,18 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     n_routes = 0
     route_ids = set()
     for route in gtfs.routes():
-        rval = vars(route)
-        rval['route_type'] = int(route.route_type)
-        agency_id = rval.get('agency_id')
+        route['route_type'] = int(route.get('route_type'))
+        agency_id = route.get('agency_id')
         if (agency_id is None or len(agency_id) == 0) and single_agency is not None:
             # Route.agency is optional if only a single agency exists.
-            agency_id = rval['agency_id'] = single_agency.agency_id
+            agency_id = route['agency_id'] = single_agency.agency_id
         if agency_id not in agency_ids:
             if lenient:
                 logger.error("Agency ID '%s' in '%s' is invalid, skipping route." % (agency_id, route))
                 continue
             else:
                 raise KeyError("agency ID '%s' in '%s' is invalid." % (agency_id, route))
-        route2 = Route(feed_id, **rval)
+        route2 = Route(feed_id, **route)
         dao.add(route2)
         route_ids.add(route2.route_id)
         n_routes += 1
@@ -335,20 +330,18 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     logger.info("Importing fares...")
     n_fares = 0
     for fare_attr in gtfs.fare_attributes():
-        fval = vars(fare_attr)
-        fval['price'] = _tofloat(fval.get('price'))
-        fval['payment_method'] = _toint(fval.get('payment_method'))
-        fval['transfers'] = _toint(fval.get('transfers'))
-        if fval.get('transfer_duration') is not None:
-            fval['transfer_duration'] = _toint(fval.get('transfer_duration'))
-        fare = FareAttribute(feed_id, **fval)
+        fare_attr['price'] = _tofloat(fare_attr.get('price'))
+        fare_attr['payment_method'] = _toint(fare_attr.get('payment_method'))
+        fare_attr['transfers'] = _toint(fare_attr.get('transfers'))
+        if fare_attr.get('transfer_duration') is not None:
+            fare_attr['transfer_duration'] = _toint(fare_attr.get('transfer_duration'))
+        fare = FareAttribute(feed_id, **fare_attr)
         dao.add(fare)
         n_fares += 1
     dao.flush()
     fare_rules = set()
     for fare_rule in gtfs.fare_rules():
-        fval = vars(fare_rule)
-        fare_rule2 = FareRule(feed_id, **fval)
+        fare_rule2 = FareRule(feed_id, **fare_rule)
         if fare_rule2 in fare_rules:
             if lenient:
                 logger.error("Duplicated fare rule (%s), skipping." % (fare_rule2))
@@ -363,21 +356,21 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     logger.info("Importing calendars...")
     calanddates2 = {}
     for calendar in gtfs.calendars():
-        calid = calendar.service_id
+        calid = calendar.get('service_id')
         calendar2 = Calendar(feed_id, calid)
         dates2 = []
-        start_date = CalendarDate.fromYYYYMMDD(calendar.start_date)
-        end_date = CalendarDate.fromYYYYMMDD(calendar.end_date)
+        start_date = CalendarDate.fromYYYYMMDD(calendar.get('start_date'))
+        end_date = CalendarDate.fromYYYYMMDD(calendar.get('end_date'))
         for d in CalendarDate.range(start_date, end_date.next_day()):
-            if int(getattr(calendar, DOW_NAMES[d.dow()])):
+            if int(calendar.get(DOW_NAMES[d.dow()])):
                 dates2.append(d)
         calanddates2[calid] = (calendar2, set(dates2))
 
     logger.info("Normalizing calendar dates...")
     for caldate in gtfs.calendar_dates():
-        calid = caldate.service_id
-        date2 = CalendarDate.fromYYYYMMDD(caldate.date)
-        addremove = int(caldate.exception_type)
+        calid = caldate.get('service_id')
+        date2 = CalendarDate.fromYYYYMMDD(caldate.get('date'))
+        addremove = int(caldate.get('exception_type'))
         if calid in calanddates2:
             calendar2, dates2 = calanddates2[calid]
         else:
@@ -405,26 +398,25 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     n_trips = 0
     trip_ids = set()
     for trip in gtfs.trips():
-        tval = vars(trip)
-        tval['wheelchair_accessible'] = _toint(tval.get('wheelchair_accessible'), Trip.WHEELCHAIR_UNKNOWN)
-        tval['bikes_allowed'] = _toint(tval.get('bikes_allowed'), Trip.BIKES_UNKNOWN)
-        cal_id = trip.service_id
+        trip['wheelchair_accessible'] = _toint(trip.get('wheelchair_accessible'), Trip.WHEELCHAIR_UNKNOWN)
+        trip['bikes_allowed'] = _toint(trip.get('bikes_allowed'), Trip.BIKES_UNKNOWN)
+        cal_id = trip.get('service_id')
         if cal_id not in calendar_ids:
             if lenient:
                 logger.error("Calendar ID '%s' in '%s' is invalid. Skipping trip." % (cal_id, trip))
                 continue
             else:
                 raise KeyError("Calendar ID '%s' in '%s' is invalid." % (cal_id, trip))
-        route_id = trip.route_id
+        route_id = trip.get('route_id')
         if route_id not in route_ids:
             if lenient:
                 logger.error("Route ID '%s' in '%s' is invalid. Skipping trip." % (route_id, trip))
                 continue
             else:
                 raise KeyError("Route ID '%s' in trip '%s' is invalid." % (route_id, trip))
-        trip2 = Trip(feed_id, frequency_generated=False, **tval)
+        trip2 = Trip(feed_id, frequency_generated=False, **trip)
         dao.add(trip2)
-        trip_ids.add(trip.trip_id)
+        trip_ids.add(trip.get('trip_id'))
         n_trips += 1
     dao.flush()
     logger.info("Imported %d trips" % n_trips)
@@ -432,38 +424,37 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     logger.info("Importing stop times...")
     n_stoptimes = 0
     for stoptime in gtfs.stop_times():
-        stval = vars(stoptime)
-        stopseq = _toint(stval.get('stop_sequence'))
+        stopseq = _toint(stoptime.get('stop_sequence'))
         # Mark times to interpolate later on 
-        arrtime = _timetoint(stval.get('arrival_time'), -999999)
-        deptime = _timetoint(stval.get('departure_time'), -999999)
+        arrtime = _timetoint(stoptime.get('arrival_time'), -999999)
+        deptime = _timetoint(stoptime.get('departure_time'), -999999)
         if arrtime == -999999:
             arrtime = deptime
         if deptime == -999999:
             deptime = arrtime
         interp = arrtime < 0 and deptime < 0
-        shpdist = _tofloat(stval.get('shape_dist_traveled'), -999999)
-        pkptype = _toint(stval.get('pickup_type'), StopTime.PICKUP_DROPOFF_REGULAR)
-        drptype = _toint(stval.get('dropoff_type'), StopTime.PICKUP_DROPOFF_REGULAR)
-        trip_id = stoptime.trip_id
+        shpdist = _tofloat(stoptime.get('shape_dist_traveled'), -999999)
+        pkptype = _toint(stoptime.get('pickup_type'), StopTime.PICKUP_DROPOFF_REGULAR)
+        drptype = _toint(stoptime.get('dropoff_type'), StopTime.PICKUP_DROPOFF_REGULAR)
+        trip_id = stoptime.get('trip_id')
         if trip_id not in trip_ids:
             if lenient:
                 logger.error("Trip ID '%s' in '%s' is invalid. Skipping stop time." % (trip_id, stoptime))
                 continue
             else:
                 raise KeyError("Trip ID '%s' in '%s' is invalid." % (trip_id, stoptime))
-        stop_id = stoptime.stop_id
+        stop_id = stoptime.get('stop_id')
         if stop_id not in stop_ids:
             if lenient:
                 logger.error("Stop ID '%s' in '%s' is invalid. Skipping stop time." % (stop_id, stoptime))
                 continue
             else:
                 raise KeyError("Trip ID '%s' in stoptime '%s' is invalid." % (stop_id, stoptime))
-        stoptime2 = StopTime(feed_id, stoptime.trip_id, stoptime.stop_id,
+        stoptime2 = StopTime(feed_id, trip_id, stop_id,
                 stop_sequence=stopseq, arrival_time=arrtime, departure_time=deptime,
                 shape_dist_traveled=shpdist, interpolated=interp,
                 pickup_type=pkptype, dropoff_type=drptype,
-                stop_headsign=stval.get('stop_headsign'))
+                stop_headsign=stoptime.get('stop_headsign'))
         dao.add(stoptime2)
         n_stoptimes += 1
         # Commit every now and then
@@ -477,13 +468,12 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     n_shape_pts = 0
     shapes = {}
     for shpt in gtfs.shapes():
-        spval = vars(shpt)
-        shape_id = spval.get('shape_id')
-        pt_seq = _toint(spval.get('shape_pt_sequence'))
+        shape_id = shpt.get('shape_id')
+        pt_seq = _toint(shpt.get('shape_pt_sequence'))
         # This field is optional
-        dist_traveled = _tofloat(spval.get('shape_dist_traveled'), -999999)
-        lat = _tofloat(spval.get('shape_pt_lat'))
-        lon = _tofloat(spval.get('shape_pt_lon'))
+        dist_traveled = _tofloat(shpt.get('shape_dist_traveled'), -999999)
+        lat = _tofloat(shpt.get('shape_pt_lat'))
+        lon = _tofloat(shpt.get('shape_pt_lon'))
         n_shape_pts += 1
         if n_shape_pts % 10000 == 0:
             logger.info("%d shape points" % n_shape_pts)
@@ -581,8 +571,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     n_exp_trips = 0
     trips_to_delete = []
     for frequency in gtfs.frequencies():
-        fval = vars(frequency)
-        trip_id = frequency.trip_id
+        trip_id = frequency.get('trip_id')
         if trip_id not in trip_ids:
             if lenient:
                 logger.error("Trip ID '%s' in '%s' is invalid. Skipping frequency." % (trip_id, frequency))
@@ -590,10 +579,10 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
             else:
                 raise KeyError("Trip ID '%s' in '%s' is invalid." % (trip_id, frequency))
         trip = dao.trip(trip_id, feed_id=feed_id)
-        start_time = _timetoint(fval.get('start_time'))
-        end_time = _timetoint(fval.get('end_time'))
-        headway_secs = _toint(fval.get('headway_secs'))
-        exact_times = _toint(fval.get('exact_times'), Trip.TIME_APPROX)
+        start_time = _timetoint(frequency.get('start_time'))
+        end_time = _timetoint(frequency.get('end_time'))
+        headway_secs = _toint(frequency.get('headway_secs'))
+        exact_times = _toint(frequency.get('exact_times'), Trip.TIME_APPROX)
         for trip_dep_time in range(start_time, end_time, headway_secs):
             # Here we assume departure time are all different.
             # That's a requirement in the GTFS specs, but this may break.

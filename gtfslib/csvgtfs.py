@@ -46,8 +46,10 @@ class CsvTableFactory(object):
     def __next__(self):
         row = [ self._strip_and_nullify(item) for item in six.next(self._rows) ]
         args = dict(six.moves.zip_longest(self._header, row, fillvalue=None))
-        return self._factory(**args)
-        # return dic
+        # return self._factory(**args)
+        # Directly return the dictionary, do not bother with an object creation
+        # (the first thing the client does is converting the object to a dict...)
+        return args
     
     def next(self):
         return self.__next__()
