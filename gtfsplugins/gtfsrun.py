@@ -36,13 +36,10 @@ class PluginContext(object):
 
     def __init__(self, dao, args):
         self._dao = dao
-        self._args = args
+        self.args = args
 
     def dao(self):
         return self._dao
-
-    def filter_trips(self, prefetch_stop_times=True, prefetch_calendars=True, prefetch_stops=False):
-        return self._dao.trips(fltr=self._args.filter, prefetch_stop_times=prefetch_stop_times, prefetch_calendars=prefetch_calendars, prefetch_stops=prefetch_stops)
 
 def main():
 

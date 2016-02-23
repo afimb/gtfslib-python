@@ -107,7 +107,7 @@ class Decret_2015_1610(object):
     """
     def run(self, context, **kwargs):
         print("Chargement des données...")
-        trips = context.filter_trips(prefetch_stop_times=True, prefetch_calendars=True)
+        trips = context.dao().trips(fltr=context.args.filter, prefetch_stop_times=True, prefetch_calendars=True, prefetch_stops=False)
         trips = list(trips)
         urbain = decret_2015_1610(trips)
         return urbain

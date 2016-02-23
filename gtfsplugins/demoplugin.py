@@ -20,6 +20,10 @@
 class DemoPlugin(object):
     """
     Documentation for the demo plugin.
+    This plugin is a demo to illustrate how to implement a plugin.
+
+    Arguments:
+      --printtrips Print all filtered trips.
     """
 
     def __init__(self):
@@ -29,5 +33,5 @@ class DemoPlugin(object):
         print("%s is running." % (self.__class__.__name__))
         print("Extra arguments: %s" % (kwargs))
         if printtrips:
-            for trip in context.filter_trips():
+            for trip in context.dao().trips(fltr=context.args.filter):
                 print(trip)
