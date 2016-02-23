@@ -23,7 +23,10 @@ from gtfslib.utils import fmttime
 "Cf. plugin pour la documentation"
 def decret_2015_1610(trips):
 
-    print("Calcul decret 2015 1610.")
+    print("Calcul decret 2015 1610 sur %d voyages." % (len(trips)))
+    if len(trips) == 0:
+        print("Aucun voyages, impossible de calculer.")
+        return None
 
     print("Calcul de l'espacement moyen des arrêts...")
     espacement_moyen = 0
@@ -103,6 +106,8 @@ class Decret_2015_1610(object):
     http://www.legifrance.gouv.fr/affichTexte.do?cidTexte=JORFTEXT000031589954
     """
     def run(self, context, **kwargs):
+        print("Chargement des données...")
         trips = context.filter_trips(prefetch_stop_times=True, prefetch_calendars=True)
+        trips = list(trips)
         urbain = decret_2015_1610(trips)
         return urbain
