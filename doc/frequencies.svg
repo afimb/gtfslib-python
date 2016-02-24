@@ -154,14 +154,14 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.4"
-     inkscape:cx="263.67103"
-     inkscape:cy="49.595693"
+     inkscape:zoom="2.8"
+     inkscape:cx="295.74574"
+     inkscape:cy="104.23809"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1366"
-     inkscape:window-height="721"
+     inkscape:window-width="1920"
+     inkscape:window-height="1033"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -177,7 +177,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -289,10 +289,12 @@
          style="font-size:40px;font-style:normal;font-weight:normal;text-align:start;line-height:100%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
          xml:space="preserve"><tspan
            id="tspan4560-7-3"
-           style="font-size:12px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
+           style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
            y="298.43918"
            x="261.67169"
-           sodipodi:role="line">Trip F1-T1-0</tspan><tspan
+           sodipodi:role="line"><tspan
+   style="font-size:12px"
+   id="tspan3063">Trip T1</tspan>@10:00</tspan><tspan
            id="tspan3450-65"
            style="font-size:10px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
            y="310.43918"
@@ -391,11 +393,13 @@
          x="261.67169"
          style="font-size:40px;font-style:normal;font-weight:normal;text-align:start;line-height:100%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
          xml:space="preserve"><tspan
-           style="font-size:12px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
+           style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
            y="298.43918"
            x="261.67169"
            sodipodi:role="line"
-           id="tspan4238">Trip F1-T1-1</tspan><tspan
+           id="tspan4238"><tspan
+   style="font-size:12px"
+   id="tspan3065">Trip T1</tspan>@11:00</tspan><tspan
            id="tspan3450-65-8"
            style="font-size:10px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
            y="310.43918"
@@ -445,10 +449,12 @@
          style="font-size:40px;font-style:normal;font-weight:normal;text-align:start;line-height:100%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
          xml:space="preserve"><tspan
            id="tspan4560-7-3-9-1"
-           style="font-size:12px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
+           style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
            y="298.43918"
            x="261.67169"
-           sodipodi:role="line">Trip F1-T1-2</tspan><tspan
+           sodipodi:role="line"><tspan
+   style="font-size:12px"
+   id="tspan3067">Trip T1</tspan>@12:00</tspan><tspan
            id="tspan3450-65-8-3"
            style="font-size:10px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
            y="310.43918"
@@ -498,35 +504,37 @@
          style="font-size:40px;font-style:normal;font-weight:normal;text-align:start;line-height:100%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
          xml:space="preserve"><tspan
            id="tspan4560-7-3-9-7"
-           style="font-size:12px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
+           style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
            y="298.43918"
            x="261.67169"
-           sodipodi:role="line">Trip F1-T1-3</tspan><tspan
+           sodipodi:role="line"><tspan
+   style="font-size:12px"
+   id="tspan3069">Trip T1</tspan>@13:00</tspan><tspan
            id="tspan3450-65-8-2"
            style="font-size:10px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Raleway;-inkscape-font-specification:Raleway"
-           y="310.43918"
+           y="308.43918"
            x="261.67169"
            sodipodi:role="line" /><tspan
            id="tspan5308-8-3-9"
            style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Courier;-inkscape-font-specification:Courier Bold"
-           y="319.88934"
+           y="317.49069"
            x="261.67169"
            sodipodi:role="line">Stop</tspan><tspan
            id="tspan5016-8-6-3"
            style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Courier;-inkscape-font-specification:Courier Bold"
-           y="329.88934"
+           y="327.49069"
            x="261.67169"
-           sodipodi:role="line">A     14:00</tspan><tspan
+           sodipodi:role="line">A     13:00</tspan><tspan
            id="tspan4110-2-63"
            style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Courier;-inkscape-font-specification:Courier Bold"
-           y="339.88934"
+           y="337.49069"
            x="261.67169"
-           sodipodi:role="line">B     14:30</tspan><tspan
+           sodipodi:role="line">B     13:30</tspan><tspan
            id="tspan5018-5-4-7"
            style="font-size:10px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;text-anchor:start;font-family:Courier;-inkscape-font-specification:Courier Bold"
-           y="349.88934"
+           y="347.49069"
            x="261.67169"
-           sodipodi:role="line">C     15:00</tspan></text>
+           sodipodi:role="line">C     14:00</tspan></text>
     </g>
   </g>
 </svg>
