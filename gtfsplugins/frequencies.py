@@ -102,5 +102,6 @@ class Frequencies(object):
                 dep_times = [dep.departure_time for dep in departures_by_dates.get(date)]
                 max_hour = max(dep_times)
                 min_hour = min(dep_times)
-                avg_dep = len(dep_times) * 3600. / (max_hour - min_hour)
+                delta_hour = max_hour - min_hour
+                avg_dep = float('inf') if delta_hour == 0 else len(dep_times) * 3600. / (max_hour - min_hour)
                 print("    %s : %3d departures (%8s - %8s), %.02f dep/h" % (date, len(dep_times), fmttime(min_hour), fmttime(max_hour), avg_dep))
