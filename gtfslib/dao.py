@@ -151,6 +151,9 @@ class Dao(object):
     def in_area(self, area):
         return (Stop.stop_lat >= area.min_lat) & (Stop.stop_lat <= area.max_lat) & (Stop.stop_lon >= area.min_lon) & (Stop.stop_lon <= area.max_lon)
 
+    def in_bounds(self, min_lat, min_lon, max_lat, max_lon):
+        return (Stop.stop_lat >= min_lat) & (Stop.stop_lat <= max_lat) & (Stop.stop_lon >= min_lon) & (Stop.stop_lon <= max_lon)
+
     def transfer(self, from_stop_id, to_stop_id, feed_id="", prefetch_stops=True):
         query = self._session.query(Transfer)
         if prefetch_stops:
@@ -221,6 +224,13 @@ class Dao(object):
         if prefetch_trips:
             query = query.options(subqueryload('calendar.trips'))
         return query.all()
+
+    def calendar_dates_date(self, fltr=None):
+        query = self._session.query(CalendarDate.date).distinct()
+        if fltr is not None:
+            query = _AutoJoiner(self._orm, query, fltr).autojoin()
+            query = query.filter(fltr)
+        return [ date for (date, ) in query.all() ]
 
     def trip(self, trip_id, feed_id="", prefetch_stop_times=True):
         query = self._session.query(Trip)
