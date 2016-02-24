@@ -149,9 +149,11 @@ class Dao(object):
         return self._page_query(query_factory, Stop.feed_id, Stop.stop_id, stopids, batch_size)
 
     def in_area(self, area):
+        """Return a filter filtering stops in the given area (RectangularArea...)"""
         return (Stop.stop_lat >= area.min_lat) & (Stop.stop_lat <= area.max_lat) & (Stop.stop_lon >= area.min_lon) & (Stop.stop_lon <= area.max_lon)
 
     def in_bounds(self, min_lat, min_lon, max_lat, max_lon):
+        """Return a filter filtering stops in the given bounds."""
         return (Stop.stop_lat >= min_lat) & (Stop.stop_lat <= max_lat) & (Stop.stop_lon >= min_lon) & (Stop.stop_lon <= max_lon)
 
     def transfer(self, from_stop_id, to_stop_id, feed_id="", prefetch_stops=True):
@@ -215,6 +217,10 @@ class Dao(object):
         return query.all()
     
     def calendar_dates(self, fltr=None, prefetch_calendars=True, prefetch_trips=False):
+        """Load calendar dates object. This may be not what you need, as it will return
+           lots of duplicated dates (ie one date per calendar). If you only need distinct
+           dates from a query (for example the set of date where a stop is active), you
+           can use the calendar_dates_date() function instead."""
         query = self._session.query(CalendarDate).distinct()
         if fltr is not None:
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
@@ -226,6 +232,10 @@ class Dao(object):
         return query.all()
 
     def calendar_dates_date(self, fltr=None):
+        """Return a set of distinct dates (python date). It will properly merge
+           identical dates from different calendars, thus returning a proper
+           set of distinct dates. In doubt with calendar_dates, this method is
+           in all probability the one you want/need."""
         query = self._session.query(CalendarDate.date).distinct()
         if fltr is not None:
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
