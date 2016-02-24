@@ -13,12 +13,12 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
-from gtfslib.utils import fmttime
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
 
 from gtfslib.spatial import SpatialClusterizer
+from gtfslib.utils import fmttime
 from collections import defaultdict
 
 class Frequencies(object):
