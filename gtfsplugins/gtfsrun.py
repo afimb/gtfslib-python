@@ -28,6 +28,7 @@ from gtfsplugins.frequencies import Frequencies
 # Please keep the following unused imports, they are used by the --filter eval.
 from gtfslib.dao import Dao
 from gtfslib.model import FeedInfo, Agency, Route, Zone, Stop, Calendar, CalendarDate, Trip, StopTime, Shape, ShapePoint, FareAttribute, FareRule  # @UnusedImport
+from gtfslib.spatial import RectangularArea  # @UnusedImport
 
 # TODO Dynamically scan packages
 PLUGINS = [ DemoPlugin, Decret_2015_1610, Frequencies ]
@@ -75,11 +76,9 @@ def main():
 
     dao = Dao(args.database, sql_logging=args.logsql)
 
-    def _evaluate(strarg):
-        globals = {}
-        globals['dao'] = dao
-        return None if strarg is None else eval(strarg, globals)
-    args.filter = _evaluate(args.filter)
+    def _evaluate(strarg, dao):
+        return None if strarg is None else eval(strarg, globals(), locals())
+    args.filter = _evaluate(args.filter, dao)
 
     # TODO Configure logging
     logging.basicConfig(level=logging.INFO)
