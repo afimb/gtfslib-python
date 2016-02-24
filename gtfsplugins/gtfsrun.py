@@ -23,12 +23,14 @@ import argparse
 
 from gtfsplugins.demoplugin import DemoPlugin
 from gtfsplugins.decret_2015_1610 import Decret_2015_1610
+from gtfsplugins.frequencies import Frequencies
 
+# Please keep the following unused imports, they are used by the --filter eval.
 from gtfslib.dao import Dao
 from gtfslib.model import FeedInfo, Agency, Route, Zone, Stop, Calendar, CalendarDate, Trip, StopTime, Shape, ShapePoint, FareAttribute, FareRule  # @UnusedImport
 
 # TODO Dynamically scan packages
-PLUGINS = [ DemoPlugin, Decret_2015_1610 ]
+PLUGINS = [ DemoPlugin, Decret_2015_1610, Frequencies ]
 
 class PluginContext(object):
     """The class given as execution context to a plugin.
@@ -71,8 +73,12 @@ def main():
                 print(plugin.__doc__)
         exit(0)
 
+    dao = Dao(args.database, sql_logging=args.logsql)
+
     def _evaluate(strarg):
-        return None if strarg is None else eval(strarg)
+        globals = {}
+        globals['dao'] = dao
+        return None if strarg is None else eval(strarg, globals)
     args.filter = _evaluate(args.filter)
 
     # TODO Configure logging
@@ -85,7 +91,6 @@ def main():
         print("Plugin not found: %s" % args.plugin)
         exit(1)
 
-    dao = Dao(args.database, sql_logging=args.logsql)
     context = PluginContext(dao, args)
 
     # Instantiate and run the plugin
