@@ -22,9 +22,7 @@ from gtfslib.model import Agency, FeedInfo, Route, Calendar, CalendarDate, Stop,
     Trip, StopTime, Transfer, Shape, ShapePoint, Zone, FareAttribute, FareRule
 from gtfslib.spatial import DistanceCache, orthodromic_distance,\
     orthodromic_seg_distance
-from gtfslib.utils import timing, fmttime, ContinousPiecewiseLinearFunc,\
-    group_items
-
+from gtfslib.utils import timing, fmttime, ContinousPiecewiseLinearFunc
 
 logger = logging.getLogger('libgtfs')
 
@@ -94,6 +92,7 @@ class _OdometerShape(object):
         ptseq = 0
         distance_meters = 0.0
         last_pt = None
+        shape.points.sort(key=lambda p: p.shape_pt_sequence)
         for pt in shape.points:
             if last_pt is not None:
                 # Note: we do not use distance cache, as most probably
