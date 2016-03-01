@@ -77,7 +77,7 @@ class PrettyCsv(object):
             self._prettysep(colwidths)
 
     def _prettyprint(self, widths, row=None):
-        s = "| "
+        s = "|"
         for width, cell in zip(widths, row):
             scell = "" if cell is None else str(cell)
             diff = width - len(scell)
@@ -85,7 +85,7 @@ class PrettyCsv(object):
         print(s)
 
     def _prettysep(self, widths):
-        s = "+-"
+        s = "+"
         for width in widths:
             s += '-' * (width + 1) + '-+'
         print(s)
