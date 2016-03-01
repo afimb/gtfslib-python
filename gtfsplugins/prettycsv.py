@@ -13,7 +13,6 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
-from itertools import izip_longest
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -38,7 +37,7 @@ class PrettyCsv(object):
             self._csv = csv.writer(self._csvfile, **kwargs)
             if self._fieldnames is not None:
                 # Write header
-                self._csv.writerow(fieldnames)
+                self._csv.writerows(fieldnames)
         else:
             self._maxwidth = int(maxwidth)
             self._csv = None
@@ -89,7 +88,7 @@ class PrettyCsv(object):
 
     def _prettyprint(self, widths, row=None):
         s = "|"
-        for width, cell in izip_longest(widths, row):
+        for width, cell in six.moves.zip_longest(widths, row, fillvalue=None):
             scell = "" if cell is None else str(cell)
             diff = width - len(scell)
             s += ' ' + (' ' * diff) + scell[:width] + ' |'
