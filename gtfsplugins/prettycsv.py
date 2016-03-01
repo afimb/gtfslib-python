@@ -24,7 +24,7 @@ import csv
 class PrettyCsv(object):
     """Act as a csv DictWriter or console pretty-printer, according to whether outfile is set or not."""
 
-    def __init__(self, outfile, fieldnames, **kwds):
+    def __init__(self, outfile, fieldnames, maxwidth=120, **kwds):
         if outfile:
             self._rows = None
             if not outfile.endswith('.csv'):
@@ -36,6 +36,7 @@ class PrettyCsv(object):
             self._csv = csv.DictWriter(self._csvfile, fieldnames=fieldnames, **kwds)
             self._csv.writeheader()
         else:
+            self._maxwidth = int(maxwidth)
             self._csv = None
             self._fieldnames = fieldnames
             self._rows = []
@@ -59,13 +60,14 @@ class PrettyCsv(object):
         if self._csv:
             self._csvfile.close()
         else:
-            colwidths = [ len(f) for f in self._fieldnames ]
+            colwidths = [ min(self._maxwidth, len(f)) for f in self._fieldnames ]
             for row in self._rows:
                 for i in range(0, len(self._fieldnames)):
                     fieldname = self._fieldnames[i]
                     cell = row.get(fieldname)
-                    if cell and len(str(cell)) > colwidths[i]:
-                        colwidths[i] = len(str(cell))
+                    l = min(self._maxwidth, len(str(cell)))
+                    if cell and l > colwidths[i]:
+                        colwidths[i] = l
             self._prettysep(colwidths)
             self._prettyprint(colwidths, self._fieldnames)
             self._prettysep(colwidths)
@@ -79,7 +81,7 @@ class PrettyCsv(object):
         for width, cell in zip(widths, row):
             scell = "" if cell is None else str(cell)
             diff = width - len(scell)
-            s += ' ' * (diff + 1) + scell + ' |'
+            s += ' ' + (' ' * diff) + scell[:width] + ' |'
         print(s)
 
     def _prettysep(self, widths):
