@@ -129,6 +129,17 @@ class Route(object):
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
+    def name(self, maxlen=None):
+        """Will return a name based on short name, or long name if a short name is not present.
+           Truncate the name to maxlen if a size is given."""
+        if self.route_short_name is not None:
+            ret = self.route_short_name
+        else:
+            ret = self.route_long_name
+        if maxlen:
+            ret = ret[:maxlen]
+        return ret
+
     def __repr__(self):
         return "<%s(id=%s/%s, %s)>" % (
                 self.__class__.__name__, self.feed_id, self.route_id, _public_vars(self))
