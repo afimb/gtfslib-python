@@ -13,6 +13,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
+from itertools import izip_longest
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -24,7 +25,8 @@ import csv
 class PrettyCsv(object):
     """Act as a csv DictWriter or console pretty-printer, according to whether outfile is set or not."""
 
-    def __init__(self, outfile, fieldnames, maxwidth=120, **kwds):
+    def __init__(self, outfile, fieldnames=None, maxwidth=120, **kwargs):
+        self._fieldnames = fieldnames
         if outfile:
             self._rows = None
             if not outfile.endswith('.csv'):
@@ -33,19 +35,24 @@ class PrettyCsv(object):
                 self._csvfile = open(outfile, 'w')
             else:
                 self._csvfile = io.TextIOWrapper(open(outfile, 'wb'), encoding='utf-8')
-            self._csv = csv.DictWriter(self._csvfile, fieldnames=fieldnames, **kwds)
-            self._csv.writeheader()
+            self._csv = csv.writer(self._csvfile, **kwargs)
+            if self._fieldnames is not None:
+                # Write header
+                self._csv.writerow(fieldnames)
         else:
             self._maxwidth = int(maxwidth)
             self._csv = None
-            self._fieldnames = fieldnames
             self._rows = []
 
     def writerow(self, row):
+        if isinstance(row, dict):
+            if self._fieldnames is None:
+                raise Exception("You can't add a row as dictionnary w/o specifying fieldnames!")
+            row = [ row.get(fieldname, None) for fieldname in self._fieldnames ]
         if self._csv:
             if six.PY2:
                 # Python str vs unicode is brain-dead
-                row = { k: v.encode(encoding='utf-8') if isinstance(v, unicode) else str(v) for k, v in row.items() }
+                row = [ v.encode(encoding='utf-8') if isinstance(v, unicode) else str(v) for v in row ]
             self._csv.writerow(row)
         if self._rows is not None:
             self._rows.append(row)
@@ -60,25 +67,29 @@ class PrettyCsv(object):
         if self._csv:
             self._csvfile.close()
         else:
-            colwidths = [ min(self._maxwidth, len(f)) for f in self._fieldnames ]
-            for row in self._rows:
-                for i in range(0, len(self._fieldnames)):
-                    fieldname = self._fieldnames[i]
-                    cell = row.get(fieldname)
+            if self._fieldnames is not None:
+                allrows = [ self._fieldnames ] + self._rows
+            else:
+                allrows = self._rows
+            ncols = max(len(row) for row in allrows)
+            colwidths = [ 0 for i in range(0, ncols) ]
+            for row in allrows:
+                for i in range(0, len(row)):
+                    cell = row[i]
                     l = min(self._maxwidth, len(str(cell)))
                     if cell and l > colwidths[i]:
                         colwidths[i] = l
-            self._prettysep(colwidths)
-            self._prettyprint(colwidths, self._fieldnames)
+            if self._fieldnames is not None:
+                self._prettysep(colwidths)
+                self._prettyprint(colwidths, self._fieldnames)
             self._prettysep(colwidths)
             for row in self._rows:
-                rowlist = [ row.get(field) for field in self._fieldnames ]
-                self._prettyprint(colwidths, rowlist)
+                self._prettyprint(colwidths, row)
             self._prettysep(colwidths)
 
     def _prettyprint(self, widths, row=None):
         s = "|"
-        for width, cell in zip(widths, row):
+        for width, cell in izip_longest(widths, row):
             scell = "" if cell is None else str(cell)
             diff = width - len(scell)
             s += ' ' + (' ' * diff) + scell[:width] + ' |'
