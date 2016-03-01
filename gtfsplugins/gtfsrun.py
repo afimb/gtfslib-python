@@ -74,6 +74,13 @@ def main():
                 print(plugin.__doc__)
         exit(0)
 
+    # Lookup for plugin
+    try:
+        plugin_class = six.next(p for p in PLUGINS if p.__name__ == args.plugin)
+    except:
+        print("Plugin not found: %s" % args.plugin)
+        exit(1)
+
     dao = Dao(args.database, sql_logging=args.logsql)
 
     def _evaluate(strarg, dao):
@@ -82,13 +89,6 @@ def main():
 
     # TODO Configure logging
     logging.basicConfig(level=logging.INFO)
-
-    # Lookup for plugin
-    try:
-        plugin_class = six.next(p for p in PLUGINS if p.__name__ == args.plugin)
-    except:
-        print("Plugin not found: %s" % args.plugin)
-        exit(1)
 
     context = PluginContext(dao, args)
 
