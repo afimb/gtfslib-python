@@ -13,7 +13,6 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
-import sys
 from gtfsplugins.prettycsv import PrettyCsv
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
@@ -26,10 +25,11 @@ class TripsPerDay(object):
     Compute the number of trips per route per day.
 
     Parameters:
-    --csv=<file> Output to given file as CSV
-    --byagency   Aggregate by agency
-    --byroute    Aggregate by route
-    --bydir      Aggregate by route and direction
+    --csv=<file>    Output to given file as CSV
+    --maxwidth=<n>  Max column width of console output
+    --byagency      Aggregate by agency
+    --byroute       Aggregate by route
+    --bydir         Aggregate by route and direction
 
     Examples:
     --filter="(CalendarDate.date >= '2016-01-01') & (CalendarDate.date <= '2016-01-31')"
@@ -55,9 +55,9 @@ class TripsPerDay(object):
             if byagency:
                 key = (trip.route.agency.agency_name, trip.route.agency)
             elif byroute:
-                key = (trip.route.route_short_name, trip.route)
+                key = (trip.route.name(), trip.route)
             elif bydir:
-                key = ("%s-%d" % (trip.route.route_short_name, trip.direction_id), (trip.direction_id, trip.route))
+                key = ("%s-%d" % (trip.route.name(), trip.direction_id), (trip.direction_id, trip.route))
             else:
                 key = ("SUM", None)
             keys.add(key)
@@ -75,7 +75,7 @@ class TripsPerDay(object):
         dates = list(tripcount.keys())
         dates.sort()
 
-        with PrettyCsv(csv, ["date"] + [ key[0] for key in keys ]) as csvout:
+        with PrettyCsv(csv, ["date"] + [ key[0] for key in keys ], **kwargs) as csvout:
             for date in dates:
                 row = { "date" : date }
                 tkc = tripcount.get(date)
