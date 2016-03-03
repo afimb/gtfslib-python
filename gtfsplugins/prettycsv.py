@@ -49,7 +49,7 @@ class PrettyCsv(object):
                 raise Exception("You can't add a row as dictionnary w/o specifying fieldnames!")
             row = [ row.get(fieldname, None) for fieldname in self._fieldnames ]
         # Force to unicode
-        row = [ u"" if v is None else v if isinstance(v, six.text_type) else six.u(str(v)) for v in row ]
+        row = [ six.u("") if v is None else v if isinstance(v, six.text_type) else six.u(str(v)) for v in row ]
         if self._csv:
             if six.PY2:
                 self._csv.writerow([ v.encode('utf-8') for v in row ])
