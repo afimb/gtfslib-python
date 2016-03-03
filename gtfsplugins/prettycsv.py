@@ -48,11 +48,13 @@ class PrettyCsv(object):
             if self._fieldnames is None:
                 raise Exception("You can't add a row as dictionnary w/o specifying fieldnames!")
             row = [ row.get(fieldname, None) for fieldname in self._fieldnames ]
+        # Force to unicode
+        row = [ u"" if v is None else v if isinstance(v, six.text_type) else six.u(str(v)) for v in row ]
         if self._csv:
             if six.PY2:
-                # Python str vs unicode is brain-dead
-                row = [ v.encode(encoding='utf-8') if isinstance(v, unicode) else str(v) for v in row ]
-            self._csv.writerow(row)
+                self._csv.writerow([ v.encode('utf-8') for v in row ])
+            else:
+                self._csv.writerow(row)
         if self._rows is not None:
             self._rows.append(row)
 
@@ -75,7 +77,7 @@ class PrettyCsv(object):
             for row in allrows:
                 for i in range(0, len(row)):
                     cell = row[i]
-                    l = min(self._maxwidth, len(str(cell)))
+                    l = min(self._maxwidth, len(cell))
                     if cell and l > colwidths[i]:
                         colwidths[i] = l
             if self._fieldnames is not None:
@@ -86,10 +88,10 @@ class PrettyCsv(object):
                 self._prettyprint(colwidths, row)
             self._prettysep(colwidths)
 
-    def _prettyprint(self, widths, row=None):
+    def _prettyprint(self, widths, row):
         s = "|"
         for width, cell in six.moves.zip_longest(widths, row, fillvalue=None):
-            scell = "" if cell is None else str(cell)
+            scell = u"" if cell is None else cell
             diff = width - len(scell)
             s += ' ' + (' ' * diff) + scell[:width] + ' |'
         print(s)
