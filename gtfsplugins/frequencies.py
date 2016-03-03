@@ -36,8 +36,8 @@ class Frequencies(object):
       For all stops at a given date
     --filter="Stop.stop_name=='Villenouvelle'"
       For one stop at all dates
-    --filter="(Route.route_short_name=='R1') & (CalendarDate.date=='2016-01-22')"
-      For all stops of a single route at a given date
+    --filter="(Route.route_short_name=='R1')"
+      For all stops of a single route.
     """
 
     def __init__(self):

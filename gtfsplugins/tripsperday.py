@@ -32,7 +32,8 @@ class TripsPerDay(object):
     --bydir         Aggregate by route and direction
 
     Examples:
-    --filter="(CalendarDate.date >= '2016-01-01') & (CalendarDate.date <= '2016-01-31')"
+    --filter="(CalendarDate.date >= '2016-01-01') &
+              (CalendarDate.date <= '2016-01-31')"
       Restrict to some date range
     --filter="(Route.route_short_name=='R1')"
       Restrict to route R1

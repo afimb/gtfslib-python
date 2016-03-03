@@ -99,10 +99,10 @@ def decret_2015_1610(trips):
 
 class Decret_2015_1610(object):
     """
-    Teste un ensemble de voyages (trips) par rapport au décret n° 2015-1610 du 8 décembre 2015
-    relatif aux critères d'espacement moyen des arrêts et de variation de la fréquence de
-    passage des services réguliers de transport public routier urbain de personnes.
-    Pour plus d'informations:
+    Teste un ensemble de voyages (trips) par rapport au décret n° 2015-1610
+    du 8 décembre 2015 relatif aux critères d'espacement moyen des arrêts
+    et de variation de la fréquence de passage des services réguliers de
+    transport public routier urbain de personnes. Pour plus d'informations:
     http://www.legifrance.gouv.fr/affichTexte.do?cidTexte=JORFTEXT000031589954
     """
     def run(self, context, **kwargs):
