@@ -13,11 +13,11 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
-from gtfsplugins.prettycsv import PrettyCsv
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
 
+from gtfsplugins.prettycsv import PrettyCsv
 from collections import defaultdict
 
 class TripsPerDay(object):
