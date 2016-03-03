@@ -37,7 +37,7 @@ class PrettyCsv(object):
             self._csv = csv.writer(self._csvfile, **kwargs)
             if self._fieldnames is not None:
                 # Write header
-                self._csv.writerows(fieldnames)
+                self._csv.writerow(fieldnames)
         else:
             self._maxwidth = int(maxwidth)
             self._csv = None
