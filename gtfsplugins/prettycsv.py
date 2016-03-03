@@ -91,7 +91,7 @@ class PrettyCsv(object):
     def _prettyprint(self, widths, row):
         s = "|"
         for width, cell in six.moves.zip_longest(widths, row, fillvalue=None):
-            scell = u"" if cell is None else cell
+            scell = six.u("") if cell is None else cell
             diff = width - len(scell)
             s += ' ' + (' ' * diff) + scell[:width] + ' |'
         print(s)
