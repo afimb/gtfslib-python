@@ -4,7 +4,8 @@ An open source (GPLv3) library in python for reading GTFS files and computing va
 [![Build Status](https://travis-ci.org/afimb/gtfslib-python.svg)](https://travis-ci.org/afimb/gtfslib-python)
 
 A more complete documentation can be found [in the wiki](https://github.com/afimb/gtfslib-python/wiki)
-Pour des explications en français, voir [la page FR du wiki](https://github.com/afimb/gtfslib-python/wiki)
+
+-> Pour des explications **en français**, voir [la page FR du wiki](https://github.com/afimb/gtfslib-python/wiki)
 
 ## Installation
 
