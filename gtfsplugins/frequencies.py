@@ -19,6 +19,7 @@
 
 from gtfslib.spatial import SpatialClusterizer
 from gtfslib.utils import fmttime
+from gtfsplugins.prettycsv import PrettyCsv
 from collections import defaultdict
 
 class Frequencies(object):
@@ -27,7 +28,8 @@ class Frequencies(object):
     Warning: This plugin is still in development, the interface may change.
     
     Parameters:
-    --cluster=<dist> Cluster stops closer than <dist> meters.
+    --csv=<file>     Output to given file as CSV
+    --cluster=<dist> Cluster stops closer than <dist> meters
     --alldates       To print frequencies on all filtered dates.
                      Otherwise takes date with max departures only (default).
     
@@ -43,7 +45,7 @@ class Frequencies(object):
     def __init__(self):
         pass
 
-    def run(self, context, cluster=0, alldates=False, **kwargs):
+    def run(self, context, csv=None, cluster=0, alldates=False, **kwargs):
         cluster_meters = float(cluster)
 
         print("Loading stops...")
@@ -63,7 +65,7 @@ class Frequencies(object):
         print("Processing trips...")
         departures_by_clusters = defaultdict(lambda : defaultdict(list))
         ntrips = 0
-        for trip in context.dao().trips(fltr=context.args.filter, prefetch_stops=True, prefetch_calendars=True):
+        for trip in context.dao().trips(fltr=context.args.filter, prefetch_stops=True, prefetch_stop_times=True, prefetch_calendars=True):
             for stop_time in trip.stop_times:
                 if not stop_time.departure_time:
                     continue
@@ -78,30 +80,31 @@ class Frequencies(object):
             if ntrips % 1000 == 0:
                 print("%d trips..." % (ntrips))
             ntrips += 1
-        for cluster, departures_by_dates in departures_by_clusters.items():
-            print("Cluster of stops:")
-            for stop in cluster.items:
-                print("    * %s / %s" % (stop.stop_id, stop.stop_name))
-            if alldates:
-                # Print departure count for all dates
-                dates_to_print = list(departures_by_dates.keys())
-                dates_to_print.sort()
-            else:
-                # Compute the max only
-                date_max = None
-                dep_max = 0
-                for date, departures in departures_by_dates.items():
-                    ndep = len(departures)
-                    if ndep >= dep_max:
-                        dep_max = ndep
-                        date_max = date
-                if date_max is None:
-                    continue
-                dates_to_print = [ date_max ]
-            for date in dates_to_print:
-                dep_times = [dep.departure_time for dep in departures_by_dates.get(date)]
-                max_hour = max(dep_times)
-                min_hour = min(dep_times)
-                delta_hour = max_hour - min_hour
-                avg_dep = float('inf') if delta_hour == 0 else len(dep_times) * 3600. / (max_hour - min_hour)
-                print("    %s : %3d departures (%8s - %8s), %.02f dep/h" % (date, len(dep_times), fmttime(min_hour), fmttime(max_hour), avg_dep))
+
+        with PrettyCsv(csv, ["cluster", "stop_id", "stop_name", "date", "departures", "min_time", "max_time", "dep_hour" ], **kwargs) as csvout:
+            for cluster, departures_by_dates in departures_by_clusters.items():
+                for stop in cluster.items:
+                    csvout.writerow([ cluster.id, stop.stop_id, stop.stop_name ])
+                if alldates:
+                    # Print departure count for all dates
+                    dates_to_print = list(departures_by_dates.keys())
+                    dates_to_print.sort()
+                else:
+                    # Compute the max only
+                    date_max = None
+                    dep_max = 0
+                    for date, departures in departures_by_dates.items():
+                        ndep = len(departures)
+                        if ndep >= dep_max:
+                            dep_max = ndep
+                            date_max = date
+                    if date_max is None:
+                        continue
+                    dates_to_print = [ date_max ]
+                for date in dates_to_print:
+                    dep_times = [dep.departure_time for dep in departures_by_dates.get(date)]
+                    max_hour = max(dep_times)
+                    min_hour = min(dep_times)
+                    delta_hour = max_hour - min_hour
+                    avg_dep = float('inf') if delta_hour == 0 else len(dep_times) * 3600. / (max_hour - min_hour)
+                    csvout.writerow([ cluster.id, None, None, date, len(dep_times), fmttime(min_hour), fmttime(max_hour), "%.3f" % avg_dep ])
