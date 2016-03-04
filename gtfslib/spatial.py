@@ -103,11 +103,36 @@ class SpatialCluster(object):
     def __init__(self, ident, items):
         self.id = ident
         self.items = items
+        self._lat = 0.0
+        self._lon = 0.0
+        w = 0.0
+        for item in self.items:
+            self._lat += item.lat()
+            self._lon += item.lon()
+            w += 1
+        self._lat /= w
+        self._lon /= w
+
+    def lat(self):
+        """The latitude of the cluster barycenter."""
+        return self._lat
+
+    def lon(self):
+        """The longitude of the cluster barycenter."""
+        return self._lon
+
+    def aggregate(self, func, sep=' '):
+        """Aggregate distinct values of items in a single string
+           (a field or any computed value; such as the item name).
+           Example:  cluster.aggregate(lambda s: s.stop_name).
+           func should return a string value."""
+        vals = list(set([ func(item) for item in self.items ]))
+        vals.sort()
+        return sep.join(vals)
 
     def __repr__(self):
         return "<%s(#%d, %s)>" % (
                 self.__class__.__name__, self.id, self.items)
-
 
 class SpatialClusterizer(object):
     """This class is meant to group stops in clusters based on distance proximity.
