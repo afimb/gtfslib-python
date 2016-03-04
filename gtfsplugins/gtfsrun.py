@@ -25,6 +25,7 @@ from gtfsplugins.demoplugin import DemoPlugin
 from gtfsplugins.decret_2015_1610 import Decret_2015_1610
 from gtfsplugins.frequencies import Frequencies
 from gtfsplugins.tripsperday import TripsPerDay
+from gtfsplugins.shpexport import ShapefileExport
 
 # Please keep the following unused imports, they are used by the --filter eval.
 from gtfslib.dao import Dao
@@ -32,7 +33,7 @@ from gtfslib.model import FeedInfo, Agency, Route, Zone, Stop, Calendar, Calenda
 from gtfslib.spatial import RectangularArea  # @UnusedImport
 
 # TODO Dynamically scan packages
-PLUGINS = [ DemoPlugin, Decret_2015_1610, Frequencies, TripsPerDay ]
+PLUGINS = [ DemoPlugin, Decret_2015_1610, Frequencies, TripsPerDay, ShapefileExport ]
 
 class PluginContext(object):
     """The class given as execution context to a plugin.
