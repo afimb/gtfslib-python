@@ -17,6 +17,7 @@
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
 
+import unicodedata
 import shapefile
 from gtfslib.spatial import SpatialClusterizer
 from collections import defaultdict
@@ -40,6 +41,11 @@ class ShapefileExport(object):
 
     def __init__(self):
         pass
+
+    def remove_accents(self, strd):
+        nfkd_form = unicodedata.normalize('NFKD', strd)
+        only_ascii = nfkd_form.encode('ASCII', 'ignore')
+        return only_ascii
 
     def run(self, context, stopshp=None, hopshp=None, cluster=0, **kwargs):
         cluster_meters = float(cluster)
@@ -95,7 +101,8 @@ class ShapefileExport(object):
                 stopshpwrt.point(cluster.lon(), cluster.lat()) # X,Y ?
                 ids = cluster.aggregate(lambda s: s.stop_id, sep=';')
                 names = cluster.aggregate(lambda s: s.stop_name, sep=';')
-                stopshpwrt.record(cluster.id, ids.encode('utf-8'), names.encode('utf-8'),
+                stopshpwrt.record(cluster.id, self.remove_accents(ids),
+                                  self.remove_accents(names),
                                   dep_count, depday_count)
             stopshpwrt.save(stopshp)
 
@@ -113,7 +120,8 @@ class ShapefileExport(object):
                 c1name = c1.aggregate(lambda s: s.stop_name, sep=';')
                 c2name = c2.aggregate(lambda s: s.stop_name, sep=';')
                 hopshpwrt.line(parts=[[[c1.lon(), c1.lat()], [c2.lon(), c2.lat()]]])
-                hopshpwrt.record(c1.id, c1name.encode('utf-8'), c2.id, c2name.encode('utf-8'),
-                              (c1name + " -> " + c2name).encode('utf-8'),
-                              trip_count, tripday_count)
+                hopshpwrt.record(c1.id, self.remove_accents(c1name), c2.id,
+                                 self.remove_accents(c2name),
+                                 self.remove_accents(c1name + " -> " + c2name),
+                                 trip_count, tripday_count)
             hopshpwrt.save(hopshp)
