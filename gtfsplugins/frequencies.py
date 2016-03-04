@@ -29,7 +29,11 @@ class Frequencies(object):
     
     Parameters:
     --csv=<file>     Output to given file as CSV
-    --cluster=<dist> Cluster stops closer than <dist> meters
+    --cluster=<dist> Cluster stops closer than <dist> meters (default to 0)
+    --dstp=<k>       Apply this penalty to clustering for stops that do not
+                     share the same station (default to 0.5)
+    --samename       Cluster stops only if they share the exact same name
+                     (default to False).
     --alldates       To print frequencies on all filtered dates.
                      Otherwise takes date with max departures only (default).
     
@@ -45,8 +49,9 @@ class Frequencies(object):
     def __init__(self):
         pass
 
-    def run(self, context, csv=None, cluster=0, alldates=False, **kwargs):
+    def run(self, context, csv=None, cluster=0, dstp=0.5, samename=False, alldates=False, **kwargs):
         cluster_meters = float(cluster)
+        dstp = float(dstp)
 
         print("Loading stops...")
         stops = set()
@@ -55,7 +60,7 @@ class Frequencies(object):
             sc.add_point(stop)
             stops.add(stop)
         print("Loaded %d stops. Clusterize..." % (len(stops)))
-        sc.clusterize()
+        sc.clusterize(comparator=sc.make_comparator(samename, dstp))
         print("Aggregated in %d clusters" % (len(sc.clusters())))
         
         print("Loading calendar dates...")
