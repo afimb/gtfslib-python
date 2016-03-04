@@ -19,7 +19,7 @@
 
 import unittest
 
-from gtfslib.model import CalendarDate
+from gtfslib.model import CalendarDate, Stop
 import datetime
 
 
@@ -65,7 +65,7 @@ class TestModel(unittest.TestCase):
     def test_calendar_date_out_of_range(self):
         broke = False
         try:
-            d1 = CalendarDate.ymd(2015, 12, 32)
+            d1 = CalendarDate.ymd(2015, 12, 32)  # @UnusedVariable
         except(ValueError):
             broke = True
         self.assertTrue(broke)
@@ -79,6 +79,22 @@ class TestModel(unittest.TestCase):
             self.assertTrue(d < d2)
             n += 1
         self.assertEqual(n, 31)
+
+    def test_same_station(self):
+        s1a = Stop('F1', 'Sa', 'StopA', 45, 0)
+        s1b = Stop('F1', 'Sb', 'StopB', 45, 0.1)
+        s1 = Stop('F1', 'S', 'Stop', 45, 0.05, location_type=Stop.TYPE_STATION)
+        s1a.parent_station_id = 'S'
+        s1b.parent_station_id = 'S'
+        self.assertTrue(s1a.in_same_station(s1b))
+        self.assertTrue(s1b.in_same_station(s1a))
+        self.assertTrue(s1.in_same_station(s1a))
+        self.assertTrue(s1a.in_same_station(s1))
+        s1c = Stop('F2', 'Sb', 'StopB', 45, 0.1)
+        s1c.parent_station_id = 'S'
+        self.assertFalse(s1c.in_same_station(s1b))
+        self.assertFalse(s1c.in_same_station(s1a))
+        self.assertFalse(s1a.in_same_station(s1c))
 
 if __name__ == '__main__':
     unittest.main()
