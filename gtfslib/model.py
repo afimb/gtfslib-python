@@ -88,6 +88,13 @@ class Stop(object):
     def lon(self):
         return self.stop_lon
 
+    def in_same_station(self, stop2):
+        if self.feed_id != stop2.feed_id:
+            return False
+        stationid1 = self.stop_id if self.location_type == Stop.TYPE_STATION else self.parent_station_id
+        stationid2 = stop2.stop_id if stop2.location_type == Stop.TYPE_STATION else stop2.parent_station_id
+        return stationid1 is not None and stationid1 == stationid2
+
     def __repr__(self):
         return "<%s(id=%s/%s, %s)>" % (
                 self.__class__.__name__, self.feed_id, self.stop_id, _public_vars(self))
