@@ -13,11 +13,11 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
-import pyqtree
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
 import math
+import pyqtree
 
 # Radius of earth in meters
 EARTH_RADIUS = 6371000
@@ -159,21 +159,44 @@ class SpatialClusterizer(object):
         for p in ps:
             self.add_point(p)
 
-    def clusterize(self):
+    @staticmethod
+    def def_comparator(d, d0, p1, p2):
+        """Consider 2 points to be in the same cluster if their distance is closer
+           than the original threshold D0. Do not take into account anything else."""
+        return True
+
+    def make_comparator(self, same_name=False, different_station_penalty=0.5):
+        """Build a comparator that apply the following rules:
+           - If samename, force the stops to have the same name to be clusterized
+           - Apply the different_station_penalty coefficient to the distance when
+             the stops do not belong to the same station. Must be <1.0"""
+        def stop_station_comparator(d, d0, stop1, stop2):
+            if same_name and stop1.stop_name != stop2.stop_name:
+                return False
+            penalty = 1.0
+            if different_station_penalty < penalty and not stop1.in_same_station(stop2):
+                penalty = different_station_penalty
+            return d <= d0 * penalty
+        return stop_station_comparator
+
+    def clusterize(self, comparator=def_comparator.__func__):
         clusters_by_item = {}
         for p in self._points:
             clusters_by_item[p] = set([p])
         for p1 in self._points:
-            # Compute bounds in lat,lon degree of D0 square around stop
+            d0 = self._D0
+            # Compute bounds in lat,lon degree of d square around stop
             cos_lat = math.cos(math.radians(p.lat()))
-            dlon = math.degrees(self._D0 / EARTH_RADIUS * cos_lat)
-            dlat = math.degrees(self._D0 / EARTH_RADIUS)
+            dlon = math.degrees(d0 / EARTH_RADIUS * cos_lat)
+            dlat = math.degrees(d0 / EARTH_RADIUS)
             bbox = (p1.lon() - dlon, p1.lat() - dlat,
                     p1.lon() + dlon, p1.lat() + dlat)
             nearby = self._spidx.intersect(bbox)
             for p2 in nearby:
                 d = orthodromic_distance(p1, p2)
-                if d > self._D0:
+                if d > d0:
+                    continue
+                if not comparator(d, self._D0, p1, p2):
                     continue
                 c1 = clusters_by_item.get(p1)
                 c2 = clusters_by_item.get(p2)
