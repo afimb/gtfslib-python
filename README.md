@@ -37,7 +37,7 @@ dao.load_gtfs("mygtfs.zip")
 for stop in dao.stops():
 	print(stop.stop_name)
 for route in dao.routes(fltr=Route.route_type == Route.TYPE_BUS):
-	print("%s: %d trips" % (route.long_name, len(route.trips)))
+	print("%s: %d trips" % (route.route_long_name, len(route.trips)))
 ```
 
 For more information [see here](https://github.com/afimb/gtfslib-python/wiki/API-usage-tutorial).
