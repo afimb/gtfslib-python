@@ -78,7 +78,8 @@ class _CacheEntry(object):
 class _OdometerShape(object):
 
     # A 0.1% cone - Coefficient to defavor points further away on a shape
-    # when doing stop snapping to shape.
+    # when doing stop snapping to shape. The summit angle of the offset cone
+    # is 2 * arctan(K).
     K = 0.001
 
     def __init__(self, shape):
@@ -141,15 +142,14 @@ class _OdometerShape(object):
                 dist, pdist = orthodromic_seg_distance(stop, a, b)
                 newdist = a.shape_dist_traveled + pdist
                 howfar = newdist - self._distance
+                # Add a slight "cone" offset. There are pathological
+                # cases with backtracking shapes where the best distance
+                # is slightly better way further (for eg 0.01m) than at
+                # the starting point (for eg 0.02m). In that case we should
+                # obviously keep the first point instead of moving too fast
+                # to the shape end. That offset should help for some cases.
                 dist += howfar * self.K
                 if dist < min_dist:
-                    # TODO We can do probably better here, by taking into
-                    # account the max distance so far. There are pathological
-                    # cases with backtracking shapes where the best distance
-                    # is slightly better way further (for eg 0.01m) than at
-                    # the starting point (for eg 0.02m). In that case we should
-                    # obviously keep the first point instead of moving too fast
-                    # to the shape end.
                     min_dist = dist
                     best_i = i
                     best_dist = newdist
