@@ -77,6 +77,10 @@ class _CacheEntry(object):
 
 class _OdometerShape(object):
 
+    # A 0.1% cone - Coefficient to defavor points further away on a shape
+    # when doing stop snapping to shape.
+    K = 0.001
+
     def __init__(self, shape):
         self._shape = shape
         self._cache = _CacheEntry(None)
@@ -135,6 +139,9 @@ class _OdometerShape(object):
                 a = self._shape.points[i]
                 b = self._shape.points[i+1]
                 dist, pdist = orthodromic_seg_distance(stop, a, b)
+                newdist = a.shape_dist_traveled + pdist
+                howfar = newdist - self._distance
+                dist += howfar * self.K
                 if dist < min_dist:
                     # TODO We can do probably better here, by taking into
                     # account the max distance so far. There are pathological
@@ -145,8 +152,8 @@ class _OdometerShape(object):
                     # to the shape end.
                     min_dist = dist
                     best_i = i
-                    best_dist = a.shape_dist_traveled + pdist
-            if best_dist >= self._distance:
+                    best_dist = newdist
+            if best_dist > self._distance:
                 self._distance = best_dist
             else:
                 delta = self._distance - best_dist
