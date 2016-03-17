@@ -28,7 +28,7 @@ class PrettyCsv(object):
         self._fieldnames = fieldnames
         if outfile:
             self._rows = None
-            if not outfile.endswith('.csv'):
+            if not outfile.endswith('.csv') and not outfile.endswith('.txt'):
                 outfile += '.csv'
             if six.PY2:
                 self._csvfile = open(outfile, 'w')
