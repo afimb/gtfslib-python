@@ -262,7 +262,7 @@ class _Orm(object):
                 Column('shape_dist_traveled', Float, nullable=False),
                 Column('timepoint', Integer, nullable=False),
                 Column('pickup_type', Integer, nullable=False),
-                Column('dropoff_type', Integer, nullable=False),
+                Column('drop_off_type', Integer, nullable=False),
                 Column('stop_headsign', String),
                 ForeignKeyConstraint(['feed_id', 'trip_id'], ['trips.feed_id', 'trips.trip_id']),
                 ForeignKeyConstraint(['feed_id', 'stop_id'], ['stops.feed_id', 'stops.stop_id']),

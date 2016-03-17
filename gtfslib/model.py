@@ -277,7 +277,7 @@ class StopTime(object):
                 shape_dist_traveled, interpolated=False,
                 timepoint=TIMEPOINT_EXACT,
                 pickup_type=PICKUP_DROPOFF_REGULAR,
-                dropoff_type=PICKUP_DROPOFF_REGULAR, **kwargs):
+                drop_off_type=PICKUP_DROPOFF_REGULAR, **kwargs):
         self.feed_id = feed_id
         self.trip_id = trip_id
         self.stop_id = stop_id
@@ -288,7 +288,7 @@ class StopTime(object):
         self.shape_dist_traveled = shape_dist_traveled
         self.timepoint = timepoint
         self.pickup_type = pickup_type
-        self.dropoff_type = dropoff_type
+        self.drop_off_type = drop_off_type
         for key in kwargs:
             setattr(self, key, kwargs[key])
 

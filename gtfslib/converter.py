@@ -434,7 +434,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         interp = arrtime < 0 and deptime < 0
         shpdist = _tofloat(stoptime.get('shape_dist_traveled'), -999999)
         pkptype = _toint(stoptime.get('pickup_type'), StopTime.PICKUP_DROPOFF_REGULAR)
-        drptype = _toint(stoptime.get('dropoff_type'), StopTime.PICKUP_DROPOFF_REGULAR)
+        drptype = _toint(stoptime.get('drop_off_type'), StopTime.PICKUP_DROPOFF_REGULAR)
         trip_id = stoptime.get('trip_id')
         if trip_id not in trip_ids:
             if lenient:
@@ -452,7 +452,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         stoptime2 = StopTime(feed_id, trip_id, stop_id,
                 stop_sequence=stopseq, arrival_time=arrtime, departure_time=deptime,
                 shape_dist_traveled=shpdist, interpolated=interp,
-                pickup_type=pkptype, dropoff_type=drptype,
+                pickup_type=pkptype, drop_off_type=drptype,
                 stop_headsign=stoptime.get('stop_headsign'))
         dao.add(stoptime2)
         n_stoptimes += 1
@@ -608,7 +608,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
                             interpolated=stoptime.interpolated,
                             timepoint=stoptime.timepoint,
                             pickup_type=stoptime.pickup_type,
-                            dropoff_type=stoptime.dropoff_type)
+                            drop_off_type=stoptime.drop_off_type)
                 trip2.stop_times.append(stoptime2)
             n_exp_trips += 1
             # This will add the associated stop times
