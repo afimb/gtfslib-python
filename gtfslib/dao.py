@@ -248,7 +248,7 @@ class Dao(object):
             query = query.options(subqueryload('stop_times'))
         return query.get((feed_id, trip_id))
     
-    def trips(self, fltr=None, prefetch_stop_times=True, prefetch_routes=False, prefetch_stops=False, prefetch_calendars=False, batch_size=1000):
+    def trips(self, fltr=None, prefetch_stop_times=True, prefetch_routes=False, prefetch_stops=False, prefetch_calendars=False, batch_size=800):
         idquery = self._session.query(Trip.feed_id, Trip.trip_id).distinct()
         if fltr is not None:
             idquery = _AutoJoiner(self._orm, idquery, fltr).autojoin()
