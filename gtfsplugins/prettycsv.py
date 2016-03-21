@@ -31,13 +31,13 @@ class PrettyCsv(object):
             if not outfile.endswith('.csv') and not outfile.endswith('.txt'):
                 outfile += '.csv'
             if six.PY2:
-                self._csvfile = open(outfile, 'w')
+                self._csvfile = open(outfile, 'wb')
             else:
                 self._csvfile = io.TextIOWrapper(open(outfile, 'wb'), encoding='utf-8')
             self._csv = csv.writer(self._csvfile, **kwargs)
             if self._fieldnames is not None:
                 # Write header
-                self._csv.writerow(fieldnames)
+                self._csv.writerow(self._fieldnames)
         else:
             self._maxwidth = int(maxwidth)
             self._csv = None
