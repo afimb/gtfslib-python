@@ -472,6 +472,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
 
     logger.info("Importing shapes...")
     n_shape_pts = 0
+    shape_flush_counter = 0
     shapes = {}
     for shpt in gtfs.shapes():
         shape_id = shpt.get('shape_id')
@@ -481,10 +482,19 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         lat = _tofloat(shpt.get('shape_pt_lat'))
         lon = _tofloat(shpt.get('shape_pt_lon'))
         n_shape_pts += 1
+        shape_flush_counter +=1
         if n_shape_pts % 10000 == 0:
-            logger.info("%d shape points" % n_shape_pts)
+            logger.info("%d shape points" % n_shape_pts)      
+
         shape = shapes.get(shape_id)
         if shape is None:
+            if shape_flush_counter > 10000:
+                dao.add_all(shapes.values())
+                dao.flush()
+                shapes = {}
+                print 'Shapes flushed to db @ %d' % shape_flush_counter
+                shape_flush_counter-=10000
+
             shape = Shape(feed_id, shape_id)
             shapes[shape_id] = shape
         shape_point = ShapePoint(feed_id, shape_id, pt_seq, lat, lon, dist_traveled)
@@ -509,7 +519,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     logger.info("Normalizing trips...")
     ntrips = 0
     # Process trips and stop times by 1k trips at a time
-    for trip in dao.trips(fltr=(Trip.feed_id == feed_id), prefetch_stop_times=True, prefetch_stops=True, batch_size=800):
+    for trip in dao.trips(fltr=(Trip.feed_id == feed_id), prefetch_stop_times=False, prefetch_stops=False, batch_size=100):
         stopseq = 0
         n_stoptimes = len(trip.stop_times)
         last_stoptime_with_time = None
