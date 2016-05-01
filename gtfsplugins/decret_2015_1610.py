@@ -21,7 +21,7 @@ from _collections import defaultdict
 from gtfslib.utils import fmttime
 
 "Cf. plugin pour la documentation"
-def decret_2015_1610(trips, trace=True):
+def decret_2015_1610(trips, trace=True, required_distance=500, required_ratio=2.5):
 
     affiche(trace, "Calcul decret 2015 1610 sur %d voyages." % (len(trips)))
     if len(trips) == 0:
@@ -92,7 +92,7 @@ def decret_2015_1610(trips, trace=True):
         ratio_frequence = frequence_max / float(frequence_min)
     affiche(trace, "Le ratio entre fréquence max et min est de %.3f (max 2.5)." % ratio_frequence)
 
-    urbain = ratio_frequence < 2.5 and espacement_moyen < 500
+    urbain = ratio_frequence < required_ratio and espacement_moyen < required_distance
     affiche(trace, "Ce service est %s au sens du décret n° 2015-1610."
           % ("URBAIN" if urbain else "NON URBAIN"))
     return urbain
