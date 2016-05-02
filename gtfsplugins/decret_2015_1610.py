@@ -25,8 +25,8 @@ def decret_2015_1610(trips, trace=True, required_distance=500, required_ratio=2.
 
     affiche(trace, "Calcul decret 2015 1610 sur %d voyages." % (len(trips)))
     if len(trips) == 0:
-        #print("Aucun voyages, impossible de calculer.")
-        return None
+        affiche(trace, "Aucun voyages, impossible de calculer.")
+        return None, None, None
 
     affiche(trace, "Calcul de l'espacement moyen des arrêts...")
     espacement_moyen = 0
@@ -95,7 +95,7 @@ def decret_2015_1610(trips, trace=True, required_distance=500, required_ratio=2.
     urbain = ratio_frequence < required_ratio and espacement_moyen < required_distance
     affiche(trace, "Ce service est %s au sens du décret n° 2015-1610."
           % ("URBAIN" if urbain else "NON URBAIN"))
-    return urbain
+    return urbain, espacement_moyen, ratio_frequence
 
 def affiche(affiche, message):
     if affiche:
