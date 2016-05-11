@@ -21,7 +21,7 @@ from _collections import defaultdict
 from gtfslib.utils import fmttime
 
 "Cf. plugin pour la documentation"
-def decret_2015_1610(trips, trace=True, required_distance=500, required_ratio=2.5):
+def decret_2015_1610(trips, trace=True, required_distance=500., required_ratio=2.5):
 
     affiche(trace, "Calcul decret 2015 1610 sur %d voyages." % (len(trips)))
     if len(trips) == 0:
@@ -41,7 +41,7 @@ def decret_2015_1610(trips, trace=True, required_distance=500, required_ratio=2.
             espacement_moyen += (stoptime2.shape_dist_traveled - stoptime1.shape_dist_traveled) * n_jours
             w_esp += n_jours
     espacement_moyen /= w_esp
-    affiche(trace, "L'espacement moyen entre arrêt du réseau est de %.2f mètres (max 500m)." % espacement_moyen)
+    affiche(trace, "L'espacement moyen entre arrêt du réseau est de %.2f mètres (max %.0fm)." % (espacement_moyen, required_distance))
 
     affiche(trace, "Calcul du jour ayant la fréquence en voyage la plus élevée...")
     frequences = defaultdict(lambda: 0)
@@ -90,7 +90,7 @@ def decret_2015_1610(trips, trace=True, required_distance=500, required_ratio=2.
         ratio_frequence = float('inf')
     else:
         ratio_frequence = frequence_max / float(frequence_min)
-    affiche(trace, "Le ratio entre fréquence max et min est de %.3f (max 2.5)." % ratio_frequence)
+    affiche(trace, "Le ratio entre fréquence max et min est de %.3f (max %.2f)." % (ratio_frequence, required_ratio))
 
     urbain = ratio_frequence < required_ratio and espacement_moyen < required_distance
     affiche(trace, "Ce service est %s au sens du décret n° 2015-1610."
@@ -108,10 +108,16 @@ class Decret_2015_1610(object):
     et de variation de la fréquence de passage des services réguliers de
     transport public routier urbain de personnes. Pour plus d'informations:
     http://www.legifrance.gouv.fr/affichTexte.do?cidTexte=JORFTEXT000031589954
+
+    Paramètres:
+    --distance=<dist>   Distance minimale moyenne entre arrêts.
+                        Valeur par défaut (décret): 500m
+    --ratio=<ratio>     Ratio entre fréquence horaire minimale et maximale.
+                        Valeur par défaut (décret): 2.5
     """
-    def run(self, context, **kwargs):
+    def run(self, context, distance=500, ratio=2.5, **kwargs):
         print("Chargement des données...")
         trips = context.dao().trips(fltr=context.args.filter, prefetch_stop_times=True, prefetch_calendars=True, prefetch_stops=False)
         trips = list(trips)
-        urbain = decret_2015_1610(trips)
+        urbain = decret_2015_1610(trips, trace=True, required_distance=float(distance), required_ratio=float(ratio))
         return urbain
