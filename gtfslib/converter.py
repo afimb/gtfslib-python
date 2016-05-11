@@ -465,8 +465,8 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         n_stoptimes += 1
         # Commit every now and then
         if n_stoptimes % 10000 == 0:
-            dao.flush()
             logger.info("%d stop times" % n_stoptimes)
+            dao.flush()
     dao.flush()
     logger.info("Imported %d stop times" % n_stoptimes)
 
@@ -483,6 +483,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         n_shape_pts += 1
         if n_shape_pts % 10000 == 0:
             logger.info("%d shape points" % n_shape_pts)
+            dao.flush()
         shape = shapes.get(shape_id)
         if shape is None:
             shape = Shape(feed_id, shape_id)
