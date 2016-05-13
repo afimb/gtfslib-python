@@ -51,6 +51,13 @@ class GtfsExport(object):
                 csvout.writerow([ agency.agency_id, agency.agency_name, agency.agency_url, agency.agency_timezone, agency.agency_lang, agency.agency_phone, agency.agency_fare_url, agency.agency_email ])
             print("Exported %d agencies" % (nagencies))
 
+        with PrettyCsv("stops.txt", ["stop_id", "stop_code", "stop_name", "stop_desc", "stop_lat", "stop_lon", "zone_id", "stop_url", "location_type", "parent_station", "stop_timezone", "wheelchair_boarding" ], **kwargs) as csvout:
+            nstops = 0
+            for stop in context.dao().stops(fltr=context.args.filter, prefetch_parent=False, prefetch_substops=False):
+                nstops += 1
+                csvout.writerow([ stop.stop_id, stop.stop_code, stop.stop_name, stop.stop_desc, stop.stop_lat, stop.stop_lon, stop.zone_id, stop.stop_url, stop.location_type, stop.parent_station_id, stop.stop_timezone, stop.wheelchair_boarding ])
+            print("Exported %d stops" % (nstops))
+
         stop_times_columns = ["trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "stop_headsign", "pickup_type", "drop_off_type", "timepoint"]
         if not skip_shape_dist:
             stop_times_columns.append("shape_dist_traveled")
