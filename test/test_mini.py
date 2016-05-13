@@ -13,13 +13,13 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
-from gtfslib.model import Trip
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
 
 import unittest
 
+from gtfslib.model import Trip
 from gtfslib.dao import Dao
 
 # Location of mini.gtfs.zip.

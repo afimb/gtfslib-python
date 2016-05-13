@@ -13,15 +13,14 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
-from gtfslib.spatial import orthodromic_distance
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
 
 import unittest
 
+from gtfslib.spatial import orthodromic_distance
 from gtfslib.dao import Dao
-
 
 # Location of GTFS files to tests.
 # This unit-test is not dependent on the content of a GTFS file.
