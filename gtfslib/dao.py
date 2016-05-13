@@ -38,7 +38,7 @@ class Dao(object):
     as this may break auto-complete and thus make the use of this class more difficult.
     """
 
-    def __init__(self, db="", sql_logging=False):
+    def __init__(self, db="", sql_logging=False, schema=None):
         if db == "" or db is None:
             # In-memory SQLite
             connect_url = "sqlite:///"
@@ -49,7 +49,7 @@ class Dao(object):
             # Assume a SQLite file
             connect_url = "sqlite:///%s" % db
         engine = sqlalchemy.create_engine(connect_url, echo=sql_logging)
-        self._orm = _Orm(engine)
+        self._orm = _Orm(engine, schema=schema)
         Session = sessionmaker(bind=engine)
         self._session = Session()
         self._stoptime1 = aliased(StopTime, name="first_stop_time")
