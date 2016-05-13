@@ -17,7 +17,8 @@
 """gtfsdbloader - GTFS to GTFS' conversion tool and database loader
 
 Usage:
-  gtfsdbloader <database> (--load=<gtfs> | --delete | --list) [--id=<id>] [--logsql] [--lenient]
+  gtfsdbloader <database> (--load=<gtfs> | --delete | --list) [--id=<id>] \
+                          [--logsql] [--lenient] [--schema=<schema>]
   gtfsdbloader (-h | --help)
   gtfsdbloader --version
 
@@ -32,6 +33,7 @@ Options:
   --version            Show lib / program version.
   --logsql             Enable SQL logging (very verbose)
   --lenient            Allow some level of brokenness in GTFS input.
+  --schema=<schema>    Set the schema to use (for PostgreSQL).
 
 Examples:
   gtfsdbloader db.sqlite --load=sncf.zip --id=sncf
@@ -53,7 +55,6 @@ from docopt import docopt
 from logging import StreamHandler
 import logging
 import sys
-
 from gtfslib.dao import Dao
 import gtfslib
 
@@ -67,7 +68,7 @@ def main():
     logger.setLevel(logging.INFO)
     logger.addHandler(StreamHandler(sys.stdout))
 
-    dao = Dao(arguments['<database>'], sql_logging=arguments['--logsql'])
+    dao = Dao(arguments['<database>'], sql_logging=arguments['--logsql'], schema=arguments['--schema'])
 
     if arguments['--list']:
         for feed in dao.feeds():
