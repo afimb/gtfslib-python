@@ -17,6 +17,9 @@
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
 
+import zipfile
+import os
+
 from gtfslib.utils import fmttime
 from gtfsplugins.prettycsv import PrettyCsv
 
@@ -29,6 +32,7 @@ class GtfsExport(object):
 
     Parameters:
     --skip_shape_dist   To remove shape_dist_traveled from the export.
+    --bundle=<zipfile>  Zip the result to given file.
 
     Examples:
     --filter="(Route.route_short_name=='R1')"
@@ -38,7 +42,7 @@ class GtfsExport(object):
     def __init__(self):
         pass
 
-    def run(self, context, skip_shape_dist=False, **kwargs):
+    def run(self, context, skip_shape_dist=False, bundle=None, **kwargs):
 
         stop_times_columns = ["trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "stop_headsign", "pickup_type", "drop_off_type", "timepoint"]
         if not skip_shape_dist:
@@ -74,3 +78,12 @@ class GtfsExport(object):
                     ndates += 1
                     csvout.writerow([calendar.service_id, date.toYYYYMMDD(), 1])
             print("Exported %d calendars with %d dates" % (ncals, ndates))
+
+        if bundle:
+            if not bundle.endswith('.zip'):
+                bundle = bundle + '.zip'
+            print("Zipping result to %s (removing .txt files)" % (bundle))
+            with zipfile.ZipFile(bundle, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for f in [ "stop_times.txt", "calendar_dates.txt" ]:
+                    zipf.write(f)
+                    os.remove(f)
