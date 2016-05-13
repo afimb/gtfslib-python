@@ -203,6 +203,10 @@ class CalendarDate(object):
         # Note: add a getter if internal representation change some day
         return self.date
 
+    def toYYYYMMDD(self):
+        """Return date as GTFS date format (YYYYMMDD)"""
+        return "%04d%02d%02d" % (self.date.year, self.date.month, self.date.day)
+
     def __lt__(self, other):
         return self.date < self._coerce(other)
 
