@@ -44,6 +44,13 @@ class GtfsExport(object):
 
     def run(self, context, skip_shape_dist=False, bundle=None, **kwargs):
 
+        with PrettyCsv("agency.txt", ["agency_id", "agency_name", "agency_url", "agency_timezone", "agency_lang", "agency_phone", "agency_fare_url" ], **kwargs) as csvout:
+            nagencies = 0
+            for agency in context.dao().agencies(fltr=context.args.filter):
+                nagencies += 1
+                csvout.writerow([ agency.agency_id, agency.agency_name, agency.agency_url, agency.agency_timezone, agency.agency_lang, agency.agency_phone, agency.agency_fare_url ])
+            print("Exported %d agencies" % (nagencies))
+
         stop_times_columns = ["trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "stop_headsign", "pickup_type", "drop_off_type", "timepoint"]
         if not skip_shape_dist:
             stop_times_columns.append("shape_dist_traveled")
