@@ -23,7 +23,8 @@ from gtfsplugins.prettycsv import PrettyCsv
 class GtfsExport(object):
     """
     Export some data in GTFS-compatible format.
-    For now only export stop times (stop_times.txt file).
+    For now only export stop times (stop_times.txt file) and calendar
+    dates (calendar_dates.txt file).
     Be careful, the interface of this plugin may change in the future!
 
     Parameters:
@@ -39,15 +40,15 @@ class GtfsExport(object):
 
     def run(self, context, skip_shape_dist=False, **kwargs):
 
-        columns = ["trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "stop_headsign", "pickup_type", "drop_off_type", "timepoint"]
+        stop_times_columns = ["trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "stop_headsign", "pickup_type", "drop_off_type", "timepoint"]
         if not skip_shape_dist:
-            columns.append("shape_dist_traveled")
-        with PrettyCsv("stop_times.txt", columns, **kwargs) as csvout:
+            stop_times_columns.append("shape_dist_traveled")
+        with PrettyCsv("stop_times.txt", stop_times_columns, **kwargs) as csvout:
             ntrips = 0
             for trip in context.dao().trips(fltr=context.args.filter, prefetch_stops=False, prefetch_stop_times=True, prefetch_calendars=False, prefetch_routes=False):
+                ntrips += 1
                 if ntrips % 1000 == 0:
                     print("%d trips..." % (ntrips))
-                ntrips += 1
                 for stoptime in trip.stop_times:
                     row = [ trip.trip_id,
                             fmttime(stoptime.arrival_time if stoptime.arrival_time else stoptime.departure_time),
@@ -61,4 +62,15 @@ class GtfsExport(object):
                     if not skip_shape_dist:
                         row.append(stoptime.shape_dist_traveled)
                     csvout.writerow(row)
-            print("Processed %d trips" % (ntrips))
+            print("Exported %d trips" % (ntrips))
+
+        with PrettyCsv("calendar_dates.txt", ["service_id", "date", "exception_type"], **kwargs) as csvout:
+            ncals = ndates = 0
+            for calendar in context.dao().calendars(fltr=context.args.filter, prefetch_dates=True):
+                ncals += 1
+                if ncals % 1000 == 0:
+                    print("%d calendars, %d dates..." % (ncals, ndates))
+                for date in calendar.dates:
+                    ndates += 1
+                    csvout.writerow([calendar.service_id, date.toYYYYMMDD(), 1])
+            print("Exported %d calendars with %d dates" % (ncals, ndates))
