@@ -62,7 +62,8 @@ class _Orm(object):
                 Column('agency_timezone', String, nullable=False),
                 Column('agency_lang', String),
                 Column('agency_phone', String),
-                Column('agency_fare_url', String))
+                Column('agency_fare_url', String),
+                Column('agency_email', String))
     mappers.append(mapper(Agency, _agency_mapper, properties={
         'feed' : relationship(FeedInfo, backref=backref('agencies', cascade="all,delete-orphan"),
                               primaryjoin=_feedinfo_id_column == foreign(_agency_feed_id_column))
