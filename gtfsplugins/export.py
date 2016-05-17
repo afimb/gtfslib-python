@@ -17,11 +17,12 @@
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
 
-import zipfile
 import os
+import zipfile
 
 from gtfslib.utils import fmttime
 from gtfsplugins.prettycsv import PrettyCsv
+
 
 class GtfsExport(object):
     """
@@ -57,6 +58,13 @@ class GtfsExport(object):
                 nstops += 1
                 csvout.writerow([ stop.stop_id, stop.stop_code, stop.stop_name, stop.stop_desc, stop.stop_lat, stop.stop_lon, stop.zone_id, stop.stop_url, stop.location_type, stop.parent_station_id, stop.stop_timezone, stop.wheelchair_boarding ])
             print("Exported %d stops" % (nstops))
+
+        with PrettyCsv("routes.txt", ["route_id", "agency_id", "route_short_name", "route_long_name", "route_desc", "route_type", "route_url", "route_color", "route_text_color" ], **kwargs) as csvout:
+            nroutes = 0
+            for route in context.dao().routes(fltr=context.args.filter):
+                nroutes += 1
+                csvout.writerow([ route.route_id, route.agency_id, route.route_short_name, route.route_long_name, route.route_desc, route.route_type, route.route_url, route.route_color, route.route_text_color ])
+            print("Exported %d routes" % (nroutes))
 
         stop_times_columns = ["trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "stop_headsign", "pickup_type", "drop_off_type", "timepoint"]
         if not skip_shape_dist:
@@ -98,6 +106,6 @@ class GtfsExport(object):
                 bundle = bundle + '.zip'
             print("Zipping result to %s (removing .txt files)" % (bundle))
             with zipfile.ZipFile(bundle, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for f in [ "agency.txt", "stops.txt", "stop_times.txt", "calendar_dates.txt" ]:
+                for f in [ "agency.txt", "stops.txt", "routes.txt", "stop_times.txt", "calendar_dates.txt" ]:
                     zipf.write(f)
                     os.remove(f)
