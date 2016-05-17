@@ -98,6 +98,6 @@ class GtfsExport(object):
                 bundle = bundle + '.zip'
             print("Zipping result to %s (removing .txt files)" % (bundle))
             with zipfile.ZipFile(bundle, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for f in [ "stop_times.txt", "calendar_dates.txt" ]:
+                for f in [ "agency.txt", "stops.txt", "stop_times.txt", "calendar_dates.txt" ]:
                     zipf.write(f)
                     os.remove(f)
