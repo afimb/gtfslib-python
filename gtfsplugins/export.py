@@ -96,6 +96,9 @@ class GtfsExport(object):
                         csvout2.writerow(row)
                 print("Exported %d trips with %d stop times" % (ntrips, nstoptimes))
 
+        # Note: GTFS' model does not have calendars objects to export,
+        # since a calendar is renormalized/expanded to a list of dates.
+
         with PrettyCsv("calendar_dates.txt", ["service_id", "date", "exception_type"], **kwargs) as csvout:
             ncals = ndates = 0
             for calendar in context.dao().calendars(fltr=context.args.filter, prefetch_dates=True):
@@ -107,6 +110,23 @@ class GtfsExport(object):
                     csvout.writerow([calendar.service_id, date.toYYYYMMDD(), 1])
             print("Exported %d calendars with %d dates" % (ncals, ndates))
 
+        shapes_columns = ["shape_id", "shape_pt_lat", "shape_pt_lon", "shape_pt_sequence"]
+        if not skip_shape_dist:
+            shapes_columns.append("shape_dist_traveled")
+        with PrettyCsv("shapes.txt", shapes_columns, **kwargs) as csvout:
+            nshapes = nshapepoints = 0
+            for shape in context.dao().shapes(fltr=context.args.filter, prefetch_points=True):
+                nshapes += 1
+                if nshapes % 100 == 0:
+                    print("%d shapes, %d points..." % (nshapes, nshapepoints))
+                for point in shape.points:
+                    nshapepoints += 1
+                    row = [shape.shape_id, point.shape_pt_lat, point.shape_pt_lon, point.shape_pt_sequence]
+                    if not skip_shape_dist:
+                        row.append(point.shape_dist_traveled)
+                    csvout.writerow(row)
+            print("Exported %d shapes with %d points" % (nshapes, nshapepoints))
+
         if bundle:
             if not isinstance(bundle, six.string_types):
                 # Allow the use of "--bundle" option only
@@ -115,6 +135,6 @@ class GtfsExport(object):
                 bundle = bundle + '.zip'
             print("Zipping result to %s (removing .txt files)" % (bundle))
             with zipfile.ZipFile(bundle, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for f in [ "agency.txt", "stops.txt", "routes.txt", "trips.txt", "stop_times.txt", "calendar_dates.txt" ]:
+                for f in [ "agency.txt", "stops.txt", "routes.txt", "trips.txt", "stop_times.txt", "calendar_dates.txt", "shapes.txt" ]:
                     zipf.write(f)
                     os.remove(f)
