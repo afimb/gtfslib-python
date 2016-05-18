@@ -127,6 +127,13 @@ class GtfsExport(object):
                     csvout.writerow(row)
             print("Exported %d shapes with %d points" % (nshapes, nshapepoints))
 
+        with PrettyCsv("transfers.txt", ["from_stop_id", "to_stop_id", "transfer_type", "min_transfer_time" ], **kwargs) as csvout:
+            ntransfers = 0
+            for transfer in context.dao().transfers(fltr=context.args.filter, prefetch_stops=False):
+                ntransfers += 1
+                csvout.writerow([ transfer.from_stop_id, transfer.to_stop_id, transfer.transfer_type, transfer.min_transfer_time ])
+            print("Exported %d transfers" % (ntransfers))
+
         if bundle:
             if not isinstance(bundle, six.string_types):
                 # Allow the use of "--bundle" option only
