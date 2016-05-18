@@ -19,6 +19,7 @@
 
 import os
 import zipfile
+import six
 
 from gtfslib.utils import fmttime
 from gtfsplugins.prettycsv import PrettyCsv
@@ -32,8 +33,9 @@ class GtfsExport(object):
     Be careful, the interface of this plugin may change in the future!
 
     Parameters:
-    --skip_shape_dist   To remove shape_dist_traveled from the export.
-    --bundle=<zipfile>  Zip the result to given file.
+    --skip_shape_dist     To remove shape_dist_traveled from the export.
+    --bundle[=<zipfile>]  Zip the result (using filename if given,
+                          otherwise default to "gtfs.zip").
 
     Examples:
     --filter="(Route.route_short_name=='R1')"
@@ -69,26 +71,30 @@ class GtfsExport(object):
         stop_times_columns = ["trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "stop_headsign", "pickup_type", "drop_off_type", "timepoint"]
         if not skip_shape_dist:
             stop_times_columns.append("shape_dist_traveled")
-        with PrettyCsv("stop_times.txt", stop_times_columns, **kwargs) as csvout:
-            ntrips = 0
-            for trip in context.dao().trips(fltr=context.args.filter, prefetch_stops=False, prefetch_stop_times=True, prefetch_calendars=False, prefetch_routes=False):
-                ntrips += 1
-                if ntrips % 1000 == 0:
-                    print("%d trips..." % (ntrips))
-                for stoptime in trip.stop_times:
-                    row = [ trip.trip_id,
-                            fmttime(stoptime.arrival_time if stoptime.arrival_time else stoptime.departure_time),
-                            fmttime(stoptime.departure_time if stoptime.departure_time else stoptime.arrival_time),
-                            stoptime.stop_id,
-                            stoptime.stop_sequence,
-                            stoptime.stop_headsign,
-                            stoptime.pickup_type,
-                            stoptime.drop_off_type,
-                            stoptime.timepoint ]
-                    if not skip_shape_dist:
-                        row.append(stoptime.shape_dist_traveled)
-                    csvout.writerow(row)
-            print("Exported %d trips" % (ntrips))
+        with PrettyCsv("trips.txt", ["route_id", "service_id", "trip_id", "trip_headsign", "trip_short_name", "direction_id", "block_id", "shape_id", "wheelchair_accessible", "bikes_allowed" ], **kwargs) as csvout1:
+            with PrettyCsv("stop_times.txt", stop_times_columns, **kwargs) as csvout2:
+                ntrips = 0
+                nstoptimes = 0
+                for trip in context.dao().trips(fltr=context.args.filter, prefetch_stops=False, prefetch_stop_times=True, prefetch_calendars=False, prefetch_routes=False):
+                    ntrips += 1
+                    if ntrips % 1000 == 0:
+                        print("%d trips..." % (ntrips))
+                    csvout1.writerow([ trip.route_id, trip.service_id, trip.trip_id, trip.trip_headsign, trip.trip_short_name, trip.direction_id, trip.block_id, trip.shape_id, trip.wheelchair_accessible, trip.bikes_allowed])
+                    for stoptime in trip.stop_times:
+                        nstoptimes += 1
+                        row = [ trip.trip_id,
+                                fmttime(stoptime.arrival_time if stoptime.arrival_time else stoptime.departure_time),
+                                fmttime(stoptime.departure_time if stoptime.departure_time else stoptime.arrival_time),
+                                stoptime.stop_id,
+                                stoptime.stop_sequence,
+                                stoptime.stop_headsign,
+                                stoptime.pickup_type,
+                                stoptime.drop_off_type,
+                                stoptime.timepoint ]
+                        if not skip_shape_dist:
+                            row.append(stoptime.shape_dist_traveled)
+                        csvout2.writerow(row)
+                print("Exported %d trips with %d stop times" % (ntrips, nstoptimes))
 
         with PrettyCsv("calendar_dates.txt", ["service_id", "date", "exception_type"], **kwargs) as csvout:
             ncals = ndates = 0
@@ -102,10 +108,13 @@ class GtfsExport(object):
             print("Exported %d calendars with %d dates" % (ncals, ndates))
 
         if bundle:
+            if not isinstance(bundle, six.string_types):
+                # Allow the use of "--bundle" option only
+                bundle = "gtfs.zip"
             if not bundle.endswith('.zip'):
                 bundle = bundle + '.zip'
             print("Zipping result to %s (removing .txt files)" % (bundle))
             with zipfile.ZipFile(bundle, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for f in [ "agency.txt", "stops.txt", "routes.txt", "stop_times.txt", "calendar_dates.txt" ]:
+                for f in [ "agency.txt", "stops.txt", "routes.txt", "trips.txt", "stop_times.txt", "calendar_dates.txt" ]:
                     zipf.write(f)
                     os.remove(f)
