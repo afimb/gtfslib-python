@@ -110,6 +110,20 @@ class GtfsExport(object):
                     csvout.writerow([calendar.service_id, date.toYYYYMMDD(), 1])
             print("Exported %d calendars with %d dates" % (ncals, ndates))
 
+        with PrettyCsv("fare_attributes.txt", ["fare_id", "price", "currency_type", "payment_method", "transfers", "transfer_duration"], **kwargs) as csvout:
+            nfareattrs = 0
+            for fareattr in context.dao().fare_attributes(fltr=context.args.filter, prefetch_fare_rules=False):
+                nfareattrs += 1
+                csvout.writerow([ fareattr.fare_id, fareattr.price, fareattr.currency_type, fareattr.payment_method, fareattr.transfers, fareattr.transfer_duration ])
+            print("Exported %d fare attributes" % (nfareattrs))
+
+        with PrettyCsv("fare_rules.txt", ["fare_id", "route_id", "origin_id", "destination_id", "contains_id"], **kwargs) as csvout:
+            nfarerules = 0
+            for farerule in context.dao().fare_rules(fltr=context.args.filter, prefetch_fare_attributes=False):
+                nfarerules += 1
+                csvout.writerow([ farerule.fare_id, farerule.route_id, farerule.origin_id, farerule.destination_id, farerule.contains_id ])
+            print("Exported %d fare rules" % (nfarerules))
+
         shapes_columns = ["shape_id", "shape_pt_lat", "shape_pt_lon", "shape_pt_sequence"]
         if not skip_shape_dist:
             shapes_columns.append("shape_dist_traveled")
@@ -127,7 +141,7 @@ class GtfsExport(object):
                     csvout.writerow(row)
             print("Exported %d shapes with %d points" % (nshapes, nshapepoints))
 
-        with PrettyCsv("transfers.txt", ["from_stop_id", "to_stop_id", "transfer_type", "min_transfer_time" ], **kwargs) as csvout:
+        with PrettyCsv("transfers.txt", ["from_stop_id", "to_stop_id", "transfer_type", "min_transfer_time"], **kwargs) as csvout:
             ntransfers = 0
             for transfer in context.dao().transfers(fltr=context.args.filter, prefetch_stops=False):
                 ntransfers += 1
@@ -142,6 +156,6 @@ class GtfsExport(object):
                 bundle = bundle + '.zip'
             print("Zipping result to %s (removing .txt files)" % (bundle))
             with zipfile.ZipFile(bundle, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for f in [ "agency.txt", "stops.txt", "routes.txt", "trips.txt", "stop_times.txt", "calendar_dates.txt", "shapes.txt" ]:
+                for f in [ "agency.txt", "stops.txt", "routes.txt", "trips.txt", "stop_times.txt", "calendar_dates.txt", "fare_rules.txt", "fare_attributes.txt", "shapes.txt", "transfers.txt" ]:
                     zipf.write(f)
                     os.remove(f)
