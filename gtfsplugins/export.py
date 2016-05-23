@@ -28,9 +28,6 @@ from gtfsplugins.prettycsv import PrettyCsv
 class GtfsExport(object):
     """
     Export some data in GTFS-compatible format.
-    For now only export stop times (stop_times.txt file) and calendar
-    dates (calendar_dates.txt file).
-    Be careful, the interface of this plugin may change in the future!
 
     Parameters:
     --skip_shape_dist     To remove shape_dist_traveled from the export.
