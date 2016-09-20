@@ -32,8 +32,6 @@ from gtfslib.model import FeedInfo, Agency, Route, Calendar, CalendarDate, Stop,
 from gtfslib.orm import _Orm
 from gtfslib.utils import group_pairs
 
-import traceback
-
 class Dao(object):
     """
     Note to developer: Please do not use fancy magic, such as automatically generating methods,
@@ -62,6 +60,9 @@ class Dao(object):
     def session(self):
         return self._session
 
+    def bulk_save_objects(self,objects):
+        return self._session.bulk_save_objects(objects)
+        
     def add(self, obj):
         self._session.add(obj)
         
@@ -358,9 +359,6 @@ class Dao(object):
             query = query.filter((item_feed_id_column == feed_id) & (item_id_column.in_(item_ids)))
             for item in query:
                 yield item
-            #batch = query.all()
-            #for item in batch:
-            #    yield item
 
     def load_gtfs(self, filename, feed_id="", lenient=False, **kwargs):
         @transactional(self.session())
@@ -476,7 +474,6 @@ def transactional(session):
                 session.commit()
                 return ret
             except:
-                traceback.print_exc()
                 session.rollback()
                 raise
         return wrapped_func
