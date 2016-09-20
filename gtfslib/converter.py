@@ -424,7 +424,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
                 for sk in shapes:
                     dao.bulk_save_objects(shapes[sk].points)                
                 dao.flush()
-                print len(shapes),'shapes and ',shape_flush_pt_counter,'points added and flushed'
+                logger.info('%s shapes and %s points inserted and flushed' % (len(shapes),shape_flush_pt_counter))
                 shapes = {}
                 shape_flush_pt_counter-=100000
 
@@ -468,7 +468,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         if n_trips % 1000 == 0:
             dao.bulk_save_objects(trips_q)
             dao.flush()
-            print len(trips_q),'trips saved. Total',n_trips
+            logger.info('%s trips saved. Total %s trips' % (len(trips_q),n_trips))
             trips_q = []
 
         trip_ids.add(trip.get('trip_id'))
