@@ -55,6 +55,7 @@ def main():
     parser.add_argument('-l', '--list', help="List all available plugins", action="store_true")
     parser.add_argument('--filter', help="Specify object filter. Examples: --filter=\"Stop.stop_name=='FooBar'\",  --filter=\"(Route.route_type.in_([Route.TYPE_SUBWAY, Route.TYPE_TRAM])\",  --filter=\"CalendarDate.date=='2016-02-22'\"", type=str)
     parser.add_argument('--logsql', help="Enable SQL logging (very verbose)", action="store_true")
+    parser.add_argument('--schema', help="Set the schema to use (for PostgreSQL).", type=str)
 
     args, xargs = parser.parse_known_args()
 
@@ -84,7 +85,7 @@ def main():
         print("Plugin not found: %s" % args.plugin)
         exit(1)
 
-    dao = Dao(args.database, sql_logging=args.logsql)
+    dao = Dao(args.database, sql_logging=args.logsql, schema=args.schema)
 
     def _evaluate(strarg, dao):
         return None if strarg is None else eval(strarg, globals(), locals())

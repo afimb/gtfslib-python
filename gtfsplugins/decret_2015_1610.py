@@ -21,14 +21,14 @@ from _collections import defaultdict
 from gtfslib.utils import fmttime
 
 "Cf. plugin pour la documentation"
-def decret_2015_1610(trips):
+def decret_2015_1610(trips, trace=True, required_distance=500, required_ratio=2.5):
 
-    print("Calcul decret 2015 1610 sur %d voyages." % (len(trips)))
+    affiche(trace, "Calcul decret 2015 1610 sur %d voyages." % (len(trips)))
     if len(trips) == 0:
-        print("Aucun voyages, impossible de calculer.")
-        return None
+        affiche(trace, "Aucun voyages, impossible de calculer.")
+        return None, None, None
 
-    print("Calcul de l'espacement moyen des arrêts...")
+    affiche(trace, "Calcul de l'espacement moyen des arrêts...")
     espacement_moyen = 0
     w_esp = 0
     for trip in trips:
@@ -41,9 +41,9 @@ def decret_2015_1610(trips):
             espacement_moyen += (stoptime2.shape_dist_traveled - stoptime1.shape_dist_traveled) * n_jours
             w_esp += n_jours
     espacement_moyen /= w_esp
-    print("L'espacement moyen entre arrêt du réseau est de %.2f mètres (max 500m)." % espacement_moyen)
+    affiche(trace, "L'espacement moyen entre arrêt du réseau est de %.2f mètres (max %.0fm)." % (espacement_moyen, float(required_distance)))
 
-    print("Calcul du jour ayant la fréquence en voyage la plus élevée...")
+    affiche(trace, "Calcul du jour ayant la fréquence en voyage la plus élevée...")
     frequences = defaultdict(lambda: 0)
     for trip in trips:
         for date in trip.calendar.dates:
@@ -54,9 +54,9 @@ def decret_2015_1610(trips):
         if frequence > freq_max:
             freq_max = frequence
             date_max = date
-    print("Le jour ayant le nombre de voyage le plus élevé est le %s, avec %d voyages." % (date_max.as_date(), freq_max))
+    affiche(trace, "Le jour ayant le nombre de voyage le plus élevé est le %s, avec %d voyages." % (date_max.as_date(), freq_max))
 
-    print("Calcul des fréquences sur la plage horaire 8h - 19h...")
+    affiche(trace, "Calcul des fréquences sur la plage horaire 8h - 19h...")
     # TODO Est-ce que ce calcul est correct? Le décret est pas clair.
     # On calcule le nombre de voyages actifs pendant chaque minute.
     frequences = [ 0 for minute in range(0, 20 * 60) ]
@@ -84,18 +84,22 @@ def decret_2015_1610(trips):
         if freq < frequence_min:
             frequence_min = freq
             minute_min = minute
-    print("La fréquence minimale est de %.2f voyages/heure, entre %s et %s." % (frequence_min / 60.0, fmttime(minute_min * 60), fmttime((minute_min + 60) * 60)))
-    print("La fréquence maximale est de %.2f voyages/heure, entre %s et %s." % (frequence_max / 60.0, fmttime(minute_max * 60), fmttime((minute_max + 60) * 60)))
+    affiche(trace, "La fréquence minimale est de %.2f voyages/heure, entre %s et %s." % (frequence_min / 60.0, fmttime(minute_min * 60), fmttime((minute_min + 60) * 60)))
+    affiche(trace, "La fréquence maximale est de %.2f voyages/heure, entre %s et %s." % (frequence_max / 60.0, fmttime(minute_max * 60), fmttime((minute_max + 60) * 60)))
     if frequence_min == 0:
         ratio_frequence = float('inf')
     else:
         ratio_frequence = frequence_max / float(frequence_min)
-    print("Le ratio entre fréquence max et min est de %.3f (max 2.5)." % ratio_frequence)
+    affiche(trace, "Le ratio entre fréquence max et min est de %.3f (max %.2f)." % (ratio_frequence, float(required_ratio)))
 
-    urbain = ratio_frequence < 2.5 and espacement_moyen < 500
-    print("Ce service est %s au sens du décret n° 2015-1610."
+    urbain = ratio_frequence < required_ratio and espacement_moyen < required_distance
+    affiche(trace, "Ce service est %s au sens du décret n° 2015-1610."
           % ("URBAIN" if urbain else "NON URBAIN"))
-    return urbain
+    return urbain, espacement_moyen, ratio_frequence
+
+def affiche(affiche, message):
+    if affiche:
+        print(message)
 
 class Decret_2015_1610(object):
     """
@@ -104,10 +108,16 @@ class Decret_2015_1610(object):
     et de variation de la fréquence de passage des services réguliers de
     transport public routier urbain de personnes. Pour plus d'informations:
     http://www.legifrance.gouv.fr/affichTexte.do?cidTexte=JORFTEXT000031589954
+
+    Paramètres:
+    --distance=<dist>   Distance minimale moyenne entre arrêts.
+                        Valeur par défaut (décret): 500m
+    --ratio=<ratio>     Ratio entre fréquence horaire minimale et maximale.
+                        Valeur par défaut (décret): 2.5
     """
-    def run(self, context, **kwargs):
+    def run(self, context, distance=500, ratio=2.5, **kwargs):
         print("Chargement des données...")
         trips = context.dao().trips(fltr=context.args.filter, prefetch_stop_times=True, prefetch_calendars=True, prefetch_stops=False)
         trips = list(trips)
-        urbain = decret_2015_1610(trips)
+        urbain = decret_2015_1610(trips, trace=True, required_distance=float(distance), required_ratio=float(ratio))
         return urbain

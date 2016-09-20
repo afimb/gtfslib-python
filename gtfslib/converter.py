@@ -399,6 +399,30 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         n_caldates += len(calendar2.dates)
     dao.flush()
     logger.info("Imported %d calendars and %d dates" % (n_calendars, n_caldates))
+
+    logger.info("Importing shapes...")
+    n_shape_pts = 0
+    shapes = {}
+    for shpt in gtfs.shapes():
+        shape_id = shpt.get('shape_id')
+        pt_seq = _toint(shpt.get('shape_pt_sequence'))
+        # This field is optional
+        dist_traveled = _tofloat(shpt.get('shape_dist_traveled'), -999999)
+        lat = _tofloat(shpt.get('shape_pt_lat'))
+        lon = _tofloat(shpt.get('shape_pt_lon'))
+        n_shape_pts += 1
+        if n_shape_pts % 10000 == 0:
+            logger.info("%d shape points" % n_shape_pts)
+            dao.flush()
+        shape = shapes.get(shape_id)
+        if shape is None:
+            shape = Shape(feed_id, shape_id)
+            shapes[shape_id] = shape
+        shape_point = ShapePoint(feed_id, shape_id, pt_seq, lat, lon, dist_traveled)
+        shape.points.append(shape_point)
+    dao.add_all(shapes.values())
+    dao.flush()
+    logger.info("Imported %d shapes with %d points" % (len(shapes), n_shape_pts))
     
 
     logger.info("Importing shapes...")
@@ -520,8 +544,8 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         # Commit every now and then
         if n_stoptimes % 50000 == 0:
             dao.bulk_save_objects(stoptimes_q)
-            dao.flush()
             logger.info("%d stop times" % n_stoptimes)
+            dao.flush()
             stoptimes_q = []
     dao.bulk_save_objects(stoptimes_q)
     dao.flush()

@@ -13,11 +13,11 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
-from gtfslib.utils import ContinousPiecewiseLinearFunc, group_items, group_pairs
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
 
+from gtfslib.utils import ContinousPiecewiseLinearFunc, group_items, group_pairs
 import unittest
 
 class TestUtils(unittest.TestCase):
