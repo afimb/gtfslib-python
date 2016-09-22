@@ -547,7 +547,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     logger.info("Normalizing trips...")
     ntrips = 0
     # Process trips and stop times by 1k trips at a time
-    for trip in dao.trips(fltr=(Trip.feed_id == feed_id), prefetch_stop_times=False, prefetch_stops=False, batch_size=50):
+    for trip in dao.trips(fltr=(Trip.feed_id == feed_id), prefetch_stop_times=True, prefetch_stops=True, batch_size=800):
         stopseq = 0
         n_stoptimes = len(trip.stop_times)
         last_stoptime_with_time = None
