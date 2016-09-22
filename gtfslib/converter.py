@@ -398,7 +398,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         n_calendars += 1
         n_caldates += len(calendar2.dates)
     dao.flush()
-    logger.info("Imported %d calendars and %d dates" % (n_calendars, n_caldates))  
+    logger.info("Imported %d calendars and %d dates" % (n_calendars, n_caldates))
 
     logger.info("Importing shapes...")
     n_shape_pts = 0
