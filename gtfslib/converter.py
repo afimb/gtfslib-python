@@ -463,7 +463,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
             else:
                 raise KeyError("Route ID '%s' in trip '%s' is invalid." % (route_id, trip))
         trip2 = Trip(feed_id, frequency_generated=False, **trip)
-        #dao.add(trip2)
+        
         trips_q.append(trip2)
         if n_trips % 1000 == 0:
             dao.bulk_save_objects(trips_q)
