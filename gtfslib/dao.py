@@ -357,7 +357,8 @@ class Dao(object):
         for feed_id, item_ids in group_pairs(ids, batch_size):
             query = query_factory()
             query = query.filter((item_feed_id_column == feed_id) & (item_id_column.in_(item_ids)))
-            for item in query:
+            batch = query.all()
+            for item in batch:
                 yield item
 
     def load_gtfs(self, filename, feed_id="", lenient=False, **kwargs):
