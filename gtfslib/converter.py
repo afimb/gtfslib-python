@@ -404,6 +404,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     n_shape_pts = 0
     shape_flush_pt_counter = 0
     shapes = {}
+    shapes_db_q = []
     for shpt in gtfs.shapes():
         shape_id = shpt.get('shape_id')
         pt_seq = _toint(shpt.get('shape_pt_sequence'))
@@ -420,21 +421,25 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         if shape is None:
             if shape_flush_pt_counter > 100000:
                 
-                dao.bulk_save_objects(shapes.values())
+                dao.bulk_save_objects(shapes_db_q)
                 for sk in shapes:
-                    dao.bulk_save_objects(shapes[sk].points)                
+                    if len(shapes[sk].points) > 0:
+                        dao.bulk_save_objects(shapes[sk].points)  
+                        shapes[sk].points[:] = []
+                shapes_db_q = []
                 dao.flush()
                 logger.info('%s shapes and %s points inserted and flushed' % (len(shapes),shape_flush_pt_counter))
-                shapes = {}
                 shape_flush_pt_counter-=100000
 
             shape = Shape(feed_id, shape_id)
             shapes[shape_id] = shape
+            shapes_db_q.append(shape)
 
         shape_point = ShapePoint(feed_id, shape_id, pt_seq, lat, lon, dist_traveled)
+        
         shape.points.append(shape_point)
-
-    dao.bulk_save_objects(shapes.values())
+    
+    dao.bulk_save_objects(shapes_db_q)
     for sk in shapes:
         dao.bulk_save_objects(shapes[sk].points)    
     dao.flush()
