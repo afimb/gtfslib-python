@@ -109,14 +109,14 @@ class GtfsExport(object):
 
         with PrettyCsv("fare_attributes.txt", ["fare_id", "price", "currency_type", "payment_method", "transfers", "transfer_duration"], **kwargs) as csvout:
             nfareattrs = 0
-            for fareattr in context.dao().fare_attributes(fltr=context.args.filter, prefetch_fare_rules=False):
+            for fareattr in context.dao().fare_attributes(fltr=None, prefetch_fare_rules=False):
                 nfareattrs += 1
                 csvout.writerow([ fareattr.fare_id, fareattr.price, fareattr.currency_type, fareattr.payment_method, fareattr.transfers, fareattr.transfer_duration ])
             print("Exported %d fare attributes" % (nfareattrs))
 
         with PrettyCsv("fare_rules.txt", ["fare_id", "route_id", "origin_id", "destination_id", "contains_id"], **kwargs) as csvout:
             nfarerules = 0
-            for farerule in context.dao().fare_rules(fltr=context.args.filter, prefetch_fare_attributes=False):
+            for farerule in context.dao().fare_rules(fltr=None, prefetch_fare_attributes=False):
                 nfarerules += 1
                 csvout.writerow([ farerule.fare_id, farerule.route_id, farerule.origin_id, farerule.destination_id, farerule.contains_id ])
             print("Exported %d fare rules" % (nfarerules))
