@@ -35,6 +35,8 @@ def gtfstime(h, m, s=0):
     return h * 3600 + m * 60 + s
 
 def fmttime(ssm):
+    if ssm is None:
+        return ""
     h = ssm / 3600
     ssm %= 3600
     m = ssm / 60
