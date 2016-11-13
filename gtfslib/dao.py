@@ -333,7 +333,15 @@ class Dao(object):
     def fare_attributes(self, fltr=None, prefetch_fare_rules=True):
         query = self._session.query(FareAttribute).distinct()
         if fltr is not None:
-            query = _AutoJoiner(self._orm, query, fltr).autojoin()
+            # TODO _AutoJoiner will not work here
+            # The join / filter to deduce from a general filter expression
+            # is rather complex, as there are many paths from a fare attribute
+            # to any object. For example, 4 paths for an agency:
+            # Path 1: farerule-route-agency,
+            # Path 2/3/4: farerule-zone[origin,destination,contains]-stop-stoptime-trip-route-agency
+            # BUT we also sometimes need to include any fare_attributes containing rules that does
+            # not correspond to any entities, as they are the default...
+            # query = query.join(FareRule).join(Route, FareRule.route).filter(fltr)
             query = query.filter(fltr)
         if prefetch_fare_rules:
             query = query.options(subqueryload('fare_rules'))
@@ -342,7 +350,8 @@ class Dao(object):
     def fare_rules(self, fltr=None, prefetch_fare_attributes=True):
         query = self._session.query(FareRule).distinct()
         if fltr is not None:
-            query = _AutoJoiner(self._orm, query, fltr).autojoin()
+            # TODO _AutoJoiner will not work here - same remark as above.
+            # query = query.join(Route, FareRule.route).filter(fltr)
             query = query.filter(fltr)
         if prefetch_fare_attributes:
             query = query.options(subqueryload('fare_attribute'))
