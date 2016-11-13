@@ -80,8 +80,8 @@ class GtfsExport(object):
                     for stoptime in trip.stop_times:
                         nstoptimes += 1
                         row = [ trip.trip_id,
-                                fmttime(stoptime.arrival_time if stoptime.arrival_time else stoptime.departure_time),
-                                fmttime(stoptime.departure_time if stoptime.departure_time else stoptime.arrival_time),
+                                fmttime(stoptime.arrival_time if stoptime.arrival_time is not None else stoptime.departure_time),
+                                fmttime(stoptime.departure_time if stoptime.departure_time is not None else stoptime.arrival_time),
                                 stoptime.stop_id,
                                 stoptime.stop_sequence,
                                 stoptime.stop_headsign,
