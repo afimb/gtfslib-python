@@ -307,6 +307,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
                 else:
                     raise KeyError("Stop ID '%s' in '%s' is invalid." % (stop_id, transfer))
         transfer2 = Transfer(feed_id, **transfer)
+        n_transfers += 1
         dao.add(transfer2)
     dao.flush()
     logger.info("Imported %d transfers" % (n_transfers))
