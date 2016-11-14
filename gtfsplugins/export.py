@@ -13,7 +13,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
-from gtfslib.model import Stop, Transfer
+from gtfslib.model import Stop, Transfer, FareAttribute, FareRule
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -53,29 +53,39 @@ class GtfsExport(object):
             print("Exported %d agencies" % (nagencies))
 
         stop_ids = set()
+        zone_ids = set()
+        def _output_stop(stop):
+            csvout.writerow([ stop.stop_id, stop.stop_code, stop.stop_name, stop.stop_desc, stop.stop_lat, stop.stop_lon, stop.zone_id, stop.stop_url, stop.location_type, stop.parent_station_id, stop.stop_timezone, stop.wheelchair_boarding ])
+
         with PrettyCsv("stops.txt", ["stop_id", "stop_code", "stop_name", "stop_desc", "stop_lat", "stop_lon", "zone_id", "stop_url", "location_type", "parent_station", "stop_timezone", "wheelchair_boarding" ], **kwargs) as csvout:
             nstops = 0
             station_ids = set()
             for stop in context.dao().stops(fltr=context.args.filter, prefetch_parent=False, prefetch_substops=False):
-                self._output_stop(csvout, stop)
+                _output_stop(stop)
                 stop_ids.add((stop.feed_id, stop.stop_id))
                 if stop.parent_station_id is not None:
                     station_ids.add((stop.feed_id, stop.parent_station_id))
+                if stop.zone_id is not None:
+                    zone_ids.add((stop.feed_id, stop.zone_id))
                 nstops += 1
             # Only export parent station that have not been already seen
             station_ids -= stop_ids
             for feed_id, st_ids in group_pairs(station_ids, 1000):
                 for station in context.dao().stops(fltr=(Stop.feed_id == feed_id) & (Stop.stop_id.in_(st_ids))):
-                    self._output_stop(csvout, station)
+                    _output_stop(station)
+                    if station.zone_id is not None:
+                        zone_ids.add((station.feed_id, station.zone_id))
                     nstops += 1
             print("Exported %d stops" % (nstops))
             stop_ids |= station_ids
 
+        route_ids = set()
         with PrettyCsv("routes.txt", ["route_id", "agency_id", "route_short_name", "route_long_name", "route_desc", "route_type", "route_url", "route_color", "route_text_color" ], **kwargs) as csvout:
             nroutes = 0
             for route in context.dao().routes(fltr=context.args.filter):
                 nroutes += 1
                 csvout.writerow([ route.route_id, route.agency_id, route.route_short_name, route.route_long_name, route.route_desc, route.route_type, route.route_url, route.route_color, route.route_text_color ])
+                route_ids.add((route.feed_id, route.route_id))
             print("Exported %d routes" % (nroutes))
 
         stop_times_columns = ["trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "stop_headsign", "pickup_type", "drop_off_type", "timepoint"]
@@ -120,19 +130,48 @@ class GtfsExport(object):
                     csvout.writerow([calendar.service_id, date.toYYYYMMDD(), 1])
             print("Exported %d calendars with %d dates" % (ncals, ndates))
 
+        fare_attr_ids = set()
+        nfarerules = [0]
+        def _output_farerule(farerule):
+            if farerule.route_id is not None and (farerule.feed_id, farerule.route_id) not in route_ids:
+                return False
+            if farerule.origin_id is not None and (farerule.feed_id, farerule.origin_id) not in zone_ids:
+                return False
+            if farerule.contains_id is not None and (farerule.feed_id, farerule.contains_id) not in zone_ids:
+                return False
+            if farerule.destination_id is not None and (farerule.feed_id, farerule.destination_id) not in zone_ids:
+                return False
+            csvout.writerow([ farerule.fare_id, farerule.route_id, farerule.origin_id, farerule.destination_id, farerule.contains_id ])
+            fare_attr_ids.add((farerule.feed_id, farerule.fare_id))
+            nfarerules[0] += 1
+            return True
+        with PrettyCsv("fare_rules.txt", ["fare_id", "route_id", "origin_id", "destination_id", "contains_id"], **kwargs) as csvout:
+            feed_ids = set()
+            for feed_id, rt_ids in group_pairs(route_ids, 1000):
+                feed_ids.add(feed_id)
+                for farerule in context.dao().fare_rules(fltr=(FareRule.feed_id==feed_id) & FareRule.route_id.in_(rt_ids), prefetch_fare_attributes=False):
+                    if not _output_farerule(farerule):
+                        continue
+            for feed_id, zn_ids in group_pairs(zone_ids, 1000):
+                feed_ids.add(feed_id)
+                for farerule in context.dao().fare_rules(fltr=(FareRule.feed_id==feed_id) & (FareRule.origin_id.in_(zn_ids) | FareRule.contains_id.in_(zn_ids) | FareRule.destination_id.in_(zn_ids)), prefetch_fare_attributes=False):
+                    if not _output_farerule(farerule):
+                        continue
+            # Special code to include all fare rules w/o any relationships
+            # of any feed_id we've encountered so far
+            for feed_id in feed_ids:
+                for farerule in context.dao().fare_rules(fltr=(FareRule.feed_id==feed_id) & (FareRule.route_id==None) & (FareRule.origin_id==None) & (FareRule.contains_id==None) & (FareRule.destination_id==None), prefetch_fare_attributes=False):
+                    if not _output_farerule(farerule):
+                        continue
+            print("Exported %d fare rules" % (nfarerules[0]))
+
         with PrettyCsv("fare_attributes.txt", ["fare_id", "price", "currency_type", "payment_method", "transfers", "transfer_duration"], **kwargs) as csvout:
             nfareattrs = 0
-            for fareattr in context.dao().fare_attributes(fltr=None, prefetch_fare_rules=False):
-                nfareattrs += 1
-                csvout.writerow([ fareattr.fare_id, fareattr.price, fareattr.currency_type, fareattr.payment_method, fareattr.transfers, fareattr.transfer_duration ])
+            for feed_id, fa_ids in group_pairs(fare_attr_ids, 1000):
+                for fareattr in context.dao().fare_attributes(fltr=(FareAttribute.feed_id==feed_id) & FareAttribute.fare_id.in_(fa_ids), prefetch_fare_rules=False):
+                    nfareattrs += 1
+                    csvout.writerow([ fareattr.fare_id, fareattr.price, fareattr.currency_type, fareattr.payment_method, fareattr.transfers, fareattr.transfer_duration ])
             print("Exported %d fare attributes" % (nfareattrs))
-
-        with PrettyCsv("fare_rules.txt", ["fare_id", "route_id", "origin_id", "destination_id", "contains_id"], **kwargs) as csvout:
-            nfarerules = 0
-            for farerule in context.dao().fare_rules(fltr=None, prefetch_fare_attributes=False):
-                nfarerules += 1
-                csvout.writerow([ farerule.fare_id, farerule.route_id, farerule.origin_id, farerule.destination_id, farerule.contains_id ])
-            print("Exported %d fare rules" % (nfarerules))
 
         shapes_columns = ["shape_id", "shape_pt_lat", "shape_pt_lon", "shape_pt_sequence"]
         if not skip_shape_dist:
@@ -178,6 +217,3 @@ class GtfsExport(object):
                 for f in [ "agency.txt", "stops.txt", "routes.txt", "trips.txt", "stop_times.txt", "calendar_dates.txt", "fare_rules.txt", "fare_attributes.txt", "shapes.txt", "transfers.txt" ]:
                     zipf.write(f)
                     os.remove(f)
-
-    def _output_stop(self, csvout, stop):
-        csvout.writerow([ stop.stop_id, stop.stop_code, stop.stop_name, stop.stop_desc, stop.stop_lat, stop.stop_lon, stop.zone_id, stop.stop_url, stop.location_type, stop.parent_station_id, stop.stop_timezone, stop.wheelchair_boarding ])
