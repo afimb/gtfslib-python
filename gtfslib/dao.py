@@ -54,8 +54,8 @@ class Dao(object):
         self._session = Session()
         self._stoptime1 = aliased(StopTime, name="first_stop_time")
         self._stoptime2 = aliased(StopTime, name="second_stop_time")
-        self._transfer_fromstop = aliased(Stop, name="from_stop")
-        self._transfer_tostop = aliased(Stop, name="to_stop")
+        self._transfer_fromstop = aliased(Stop, name="tr_from_stop")
+        self._transfer_tostop = aliased(Stop, name="tr_to_stop")
 
     def session(self):
         return self._session
@@ -168,14 +168,13 @@ class Dao(object):
     def transfer_to_stop(self):
         return self._transfer_tostop
 
-    def transfers(self, fltr=None, stop_fltr=None, prefetch_stops=True):
+    def transfers(self, fltr=None, prefetch_stops=True):
         query = self._session.query(Transfer).distinct()
         if fltr is not None:
-            query = query.filter(fltr)
-        if stop_fltr is not None:
             query = query.join(self._transfer_fromstop, 'from_stop')
             query = query.join(self._transfer_tostop, 'to_stop')
-            query = query.filter(stop_fltr)
+            query = _AutoJoiner(self._orm, query, fltr).autojoin()
+            query = query.filter(fltr)
         if prefetch_stops:
             query = query.options(subqueryload('from_stop'), subqueryload('to_stop'))
         return query.all()
@@ -427,7 +426,7 @@ class _AutoJoiner(object):
         #    With all branches in a star-like configuration with trip in the middle.
         branch1 = Agency in all_classes or Route in all_classes
         branch2 = CalendarDate in all_classes or Calendar in all_classes
-        branch3 = Stop in all_classes or StopTime in all_classes
+        branch3 = Transfer in all_classes or Stop in all_classes or StopTime in all_classes
         branch4 = Shape in all_classes
         n_branches = sum(branch for branch in (branch1, branch2, branch3, branch4))
         if Trip not in all_classes and n_branches > 1:
@@ -439,8 +438,14 @@ class _AutoJoiner(object):
                 join_classes.add(Route)
             if CalendarDate in all_classes and not Calendar in all_classes:
                 join_classes.add(Calendar)
-            if Stop in all_classes and not StopTime in all_classes:
+            if (Transfer in all_classes or Stop in all_classes) and not StopTime in all_classes:
                 join_classes.add(StopTime)
+            if Transfer in all_classes and not Stop in all_classes:
+                join_classes.add(Stop)
+        else:
+            # Connect branch 3, adding Stop if needed
+            if Transfer in all_classes and StopTime in all_classes and not Stop in all_classes:
+                join_classes.add(Stop)
 
         # The order of join is important. We could have devised
         # a more generic approach by computing the paths between
@@ -457,7 +462,7 @@ class _AutoJoiner(object):
             try:
                 self._query = self._query.join(clazz)
             except InvalidRequestError:
-                if timeout > 10:
+                if timeout > 20:
                     raise
                 # Try later on
                 classes_to_join.append(clazz)

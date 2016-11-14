@@ -126,7 +126,7 @@ class TestDummyGtfs(unittest.TestCase):
         # Check transfers
         transfers = dao.transfers()
         self.assertTrue(len(transfers) == 3)
-        transfers = dao.transfers(stop_fltr=(dao.transfer_from_stop().stop_id == 'GBSJB'))
+        transfers = dao.transfers(fltr=(dao.transfer_from_stop().stop_id == 'GBSJB'))
         self.assertTrue(len(transfers) == 1)
         self.assertTrue(transfers[0].from_stop.stop_id == 'GBSJB')
 

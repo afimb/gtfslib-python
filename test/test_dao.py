@@ -155,6 +155,39 @@ class TestDao(unittest.TestCase):
                 self.assertTrue(stoptime1.trip == stoptime2.trip)
                 self.assertTrue(stoptime1.stop_sequence + 1 == stoptime2.stop_sequence)
 
+    def test_stop_station(self):
+        dao = Dao()
+        f1 = FeedInfo("F1")
+        sa = Stop("F1", "SA", "Station A", 45.0000, 0.0000)
+        sa1 = Stop("F1", "SA1", "Stop A1", 45.0001, 0.0001)
+        sa1.parent_station_id = 'SA'
+        sb = Stop("F1", "SB", "Station B", 45.0002, 0.0002)
+        sb1 = Stop("F1", "SB1", "Stop B1", 45.0003, 0.0003)
+        sb1.parent_station_id = 'SB'
+        sb2 = Stop("F1", "SB2", "Stop B2", 45.0002, 0.0003)
+        sb2.parent_station_id = 'SB'
+        a1 = Agency("F1", "A1", "Agency 1", "url1", "Europe/Paris")
+        r1 = Route("F1", "R1", "A1", Route.TYPE_BUS)
+        c1 = Calendar("F1", "C1")
+        t1 = Trip("F1", "T1", "R1", "C1")
+        st1a = StopTime("F1", "T1", "SA1", 0, None, 3600, 0.0)
+        st1b = StopTime("F1", "T1", "SB1", 1, 3800, None, 100.0)
+        dao.add_all([ f1, sa, sa1, sb, sb1, sb2, a1, r1, c1, t1, st1a, st1b ])
+
+        stops = list(dao.stops(fltr=(Agency.agency_id=='A1')))
+        self.assertTrue(len(stops) == 2)
+        self.assertTrue(sa1 in stops)
+        self.assertTrue(sb1 in stops)
+
+        stops = list(dao.stops(fltr=(Stop.parent_station_id=='SA')))
+        self.assertTrue(len(stops) == 1)
+        self.assertTrue(sa1 in stops)
+
+        stops = list(dao.stops(fltr=(Stop.parent_station_id=='SB')))
+        self.assertTrue(len(stops) == 2)
+        self.assertTrue(sb1 in stops)
+        self.assertTrue(sb2 in stops)
+
     def test_transfers(self):
         dao = Dao()
         f1 = FeedInfo("F1")
@@ -166,7 +199,18 @@ class TestDao(unittest.TestCase):
         t23 = Transfer("F1", "S2", "S3", transfer_type=Transfer.TRANSFER_TIMED, min_transfer_time=180)
         t32 = Transfer("F1", "S3", "S2", transfer_type=Transfer.TRANSFER_TIMED, min_transfer_time=120)
         t13 = Transfer("F1", "S1", "S3", transfer_type=Transfer.TRANSFER_NONE)
-        dao.add_all([ f1, s1, s2, s3, t12, t21, t23, t32, t13 ])
+        a1 = Agency("F1", "A1", "Agency 1", "url1", "Europe/Paris")
+        a2 = Agency("F1", "A2", "Agency 2", "url2", "Europe/London")
+        r1 = Route("F1", "R1", "A1", Route.TYPE_BUS)
+        r2 = Route("F1", "R2", "A2", Route.TYPE_BUS)
+        c1 = Calendar("F1", "C1")
+        t1 = Trip("F1", "T1", "R1", "C1")
+        t2 = Trip("F1", "T2", "R2", "C1")
+        st1a = StopTime("F1", "T1", "S1", 0, None, 3600, 0.0)
+        st1b = StopTime("F1", "T1", "S2", 1, 3800, None, 100.0)
+        st2a = StopTime("F1", "T2", "S1", 0, None, 4600, 0.0)
+        st2b = StopTime("F1", "T2", "S3", 1, 4800, None, 100.0)
+        dao.add_all([ f1, s1, s2, s3, t12, t21, t23, t32, t13, a1, a2, r1, r2, c1, t1, t2, st1a, st1b, st2a, st2b ])
 
         self.assertTrue(len(dao.transfers()) == 5)
 
@@ -175,12 +219,12 @@ class TestDao(unittest.TestCase):
         for transfer in timed_transfers:
             self.assertTrue(transfer.transfer_type == Transfer.TRANSFER_TIMED)
 
-        s1_from_transfers = dao.transfers(stop_fltr=(dao.transfer_from_stop().stop_name == "Stop 1"))
+        s1_from_transfers = dao.transfers(fltr=(dao.transfer_from_stop().stop_name == "Stop 1"))
         self.assertTrue(len(s1_from_transfers) == 2)
         for transfer in s1_from_transfers:
             self.assertTrue(transfer.from_stop.stop_name == "Stop 1")
 
-        s1_fromto_transfers = dao.transfers(stop_fltr=((dao.transfer_from_stop().stop_name == "Stop 1") | (dao.transfer_to_stop().stop_name == "Stop 1")))
+        s1_fromto_transfers = dao.transfers(fltr=((dao.transfer_from_stop().stop_name == "Stop 1") | (dao.transfer_to_stop().stop_name == "Stop 1")))
         self.assertTrue(len(s1_fromto_transfers) == 3)
         for transfer in s1_fromto_transfers:
             self.assertTrue(transfer.from_stop.stop_name == "Stop 1" or transfer.to_stop.stop_name == "Stop 1")
@@ -193,6 +237,11 @@ class TestDao(unittest.TestCase):
                 self.assertTrue(transfer.transfer_type == Transfer.TRANSFER_DEFAULT)
             elif transfer.to_stop.stop_id == "S3":
                 self.assertTrue(transfer.transfer_type == Transfer.TRANSFER_NONE)
+
+        a1_stops = list(dao.stops(fltr=(Agency.agency_id=='A1')))
+        self.assertTrue(len(a1_stops) == 2)
+        self.assertTrue(s1 in a1_stops)
+        self.assertTrue(s2 in a1_stops)
 
     def test_areas(self):
         dao = Dao()
