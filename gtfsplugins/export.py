@@ -13,6 +13,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
+from gtfslib.model import Stop, Transfer
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
@@ -21,7 +22,7 @@ import os
 import zipfile
 import six
 
-from gtfslib.utils import fmttime
+from gtfslib.utils import fmttime, group_pairs
 from gtfsplugins.prettycsv import PrettyCsv
 
 
@@ -51,12 +52,24 @@ class GtfsExport(object):
                 csvout.writerow([ agency.agency_id, agency.agency_name, agency.agency_url, agency.agency_timezone, agency.agency_lang, agency.agency_phone, agency.agency_fare_url, agency.agency_email ])
             print("Exported %d agencies" % (nagencies))
 
+        stop_ids = set()
         with PrettyCsv("stops.txt", ["stop_id", "stop_code", "stop_name", "stop_desc", "stop_lat", "stop_lon", "zone_id", "stop_url", "location_type", "parent_station", "stop_timezone", "wheelchair_boarding" ], **kwargs) as csvout:
             nstops = 0
+            station_ids = set()
             for stop in context.dao().stops(fltr=context.args.filter, prefetch_parent=False, prefetch_substops=False):
+                self._output_stop(csvout, stop)
+                stop_ids.add((stop.feed_id, stop.stop_id))
+                if stop.parent_station_id is not None:
+                    station_ids.add((stop.feed_id, stop.parent_station_id))
                 nstops += 1
-                csvout.writerow([ stop.stop_id, stop.stop_code, stop.stop_name, stop.stop_desc, stop.stop_lat, stop.stop_lon, stop.zone_id, stop.stop_url, stop.location_type, stop.parent_station_id, stop.stop_timezone, stop.wheelchair_boarding ])
+            # Only export parent station that have not been already seen
+            station_ids -= stop_ids
+            for feed_id, st_ids in group_pairs(station_ids, 1000):
+                for station in context.dao().stops(fltr=(Stop.feed_id == feed_id) & (Stop.stop_id.in_(st_ids))):
+                    self._output_stop(csvout, station)
+                    nstops += 1
             print("Exported %d stops" % (nstops))
+            stop_ids |= station_ids
 
         with PrettyCsv("routes.txt", ["route_id", "agency_id", "route_short_name", "route_long_name", "route_desc", "route_type", "route_url", "route_color", "route_text_color" ], **kwargs) as csvout:
             nroutes = 0
@@ -140,9 +153,18 @@ class GtfsExport(object):
 
         with PrettyCsv("transfers.txt", ["from_stop_id", "to_stop_id", "transfer_type", "min_transfer_time"], **kwargs) as csvout:
             ntransfers = 0
-            for transfer in context.dao().transfers(fltr=context.args.filter, prefetch_stops=False):
-                ntransfers += 1
-                csvout.writerow([ transfer.from_stop_id, transfer.to_stop_id, transfer.transfer_type, transfer.min_transfer_time ])
+            for feed_id, st_ids in group_pairs(stop_ids, 1000):
+                # Note: we can't use a & operator below instead of |,
+                # as we would need to have *all* IDs in one batch.
+                for transfer in context.dao().transfers(fltr=(Transfer.feed_id == feed_id) & (Transfer.from_stop_id.in_(st_ids) | Transfer.to_stop_id.in_(st_ids)), prefetch_stops=False):
+                    # As we used from_stop_id.in(...) OR to_stop_id.in(...),
+                    # we need to filter out the potential superfluous results.
+                    from_stop_id = (transfer.feed_id, transfer.from_stop_id)
+                    to_stop_id = (transfer.feed_id, transfer.to_stop_id)
+                    if from_stop_id not in stop_ids or to_stop_id not in stop_ids:
+                        continue
+                    ntransfers += 1
+                    csvout.writerow([ transfer.from_stop_id, transfer.to_stop_id, transfer.transfer_type, transfer.min_transfer_time ])
             print("Exported %d transfers" % (ntransfers))
 
         if bundle:
@@ -156,3 +178,6 @@ class GtfsExport(object):
                 for f in [ "agency.txt", "stops.txt", "routes.txt", "trips.txt", "stop_times.txt", "calendar_dates.txt", "fare_rules.txt", "fare_attributes.txt", "shapes.txt", "transfers.txt" ]:
                     zipf.write(f)
                     os.remove(f)
+
+    def _output_stop(self, csvout, stop):
+        csvout.writerow([ stop.stop_id, stop.stop_code, stop.stop_name, stop.stop_desc, stop.stop_lat, stop.stop_lon, stop.zone_id, stop.stop_url, stop.location_type, stop.parent_station_id, stop.stop_timezone, stop.wheelchair_boarding ])
