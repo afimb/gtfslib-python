@@ -192,6 +192,7 @@ class GtfsExport(object):
 
         with PrettyCsv("transfers.txt", ["from_stop_id", "to_stop_id", "transfer_type", "min_transfer_time"], **kwargs) as csvout:
             ntransfers = 0
+            transfer_ids = set()
             for feed_id, st_ids in group_pairs(stop_ids, 1000):
                 # Note: we can't use a & operator below instead of |,
                 # as we would need to have *all* IDs in one batch.
@@ -202,6 +203,11 @@ class GtfsExport(object):
                     to_stop_id = (transfer.feed_id, transfer.to_stop_id)
                     if from_stop_id not in stop_ids or to_stop_id not in stop_ids:
                         continue
+                    transfer_id = (from_stop_id, to_stop_id)
+                    if transfer_id in transfer_ids:
+                        # Prevent duplicates (can happen from grouping)
+                        continue
+                    transfer_ids.add(transfer_id)
                     ntransfers += 1
                     csvout.writerow([ transfer.from_stop_id, transfer.to_stop_id, transfer.transfer_type, transfer.min_transfer_time ])
             print("Exported %d transfers" % (ntransfers))
