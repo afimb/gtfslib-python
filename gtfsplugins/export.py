@@ -164,8 +164,8 @@ class GtfsExport(object):
                     if not _output_farerule(farerule):
                         continue
             print("Exported %d fare rules" % (nfarerules[0]))
-            if nfarerules[0] == 0:
-                os.remove("fare_rules.txt")
+        if nfarerules[0] == 0:
+            os.remove("fare_rules.txt")
 
         with PrettyCsv("fare_attributes.txt", ["fare_id", "price", "currency_type", "payment_method", "transfers", "transfer_duration"], **kwargs) as csvout:
             nfareattrs = 0
@@ -174,8 +174,8 @@ class GtfsExport(object):
                     nfareattrs += 1
                     csvout.writerow([ fareattr.fare_id, fareattr.price, fareattr.currency_type, fareattr.payment_method, fareattr.transfers, fareattr.transfer_duration ])
             print("Exported %d fare attributes" % (nfareattrs))
-            if nfareattrs == 0:
-                os.remove("fare_attributes.txt")
+        if nfareattrs == 0:
+            os.remove("fare_attributes.txt")
 
         shapes_columns = ["shape_id", "shape_pt_lat", "shape_pt_lon", "shape_pt_sequence"]
         if not skip_shape_dist:
@@ -215,8 +215,8 @@ class GtfsExport(object):
                     ntransfers += 1
                     csvout.writerow([ transfer.from_stop_id, transfer.to_stop_id, transfer.transfer_type, transfer.min_transfer_time ])
             print("Exported %d transfers" % (ntransfers))
-            if ntransfers == 0:
-                os.remove("transfers.txt")
+        if ntransfers == 0:
+            os.remove("transfers.txt")
 
         if bundle:
             if not isinstance(bundle, six.string_types):
