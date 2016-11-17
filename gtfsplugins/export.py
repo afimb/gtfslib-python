@@ -193,6 +193,8 @@ class GtfsExport(object):
                         row.append(point.shape_dist_traveled)
                     csvout.writerow(row)
             print("Exported %d shapes with %d points" % (nshapes, nshapepoints))
+        if nshapes == 0:
+            os.remove("shapes.txt")
 
         with PrettyCsv("transfers.txt", ["from_stop_id", "to_stop_id", "transfer_type", "min_transfer_time"], **kwargs) as csvout:
             ntransfers = 0
