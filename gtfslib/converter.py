@@ -403,7 +403,9 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
 
     logger.info("Importing shapes...")
     n_shape_pts = 0
+    shape_flush_pt_counter = 0
     shapes = {}
+    shapes_db_q = []
     for shpt in gtfs.shapes():
         shape_id = shpt.get('shape_id')
         pt_seq = _toint(shpt.get('shape_pt_sequence'))
@@ -412,21 +414,42 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         lat = _tofloat(shpt.get('shape_pt_lat'))
         lon = _tofloat(shpt.get('shape_pt_lon'))
         n_shape_pts += 1
+        shape_flush_pt_counter += 1
         if n_shape_pts % 10000 == 0:
             logger.info("%d shape points" % n_shape_pts)
-            dao.flush()
+
         shape = shapes.get(shape_id)
         if shape is None:
+            if shape_flush_pt_counter > 100000:
+                
+                dao.bulk_save_objects(shapes_db_q)
+                for sk in shapes:
+                    if len(shapes[sk].points) > 0:
+                        dao.bulk_save_objects(shapes[sk].points)  
+                        shapes[sk].points[:] = []
+                shapes_db_q = []
+                dao.flush()
+                logger.info('%s shapes and %s points inserted and flushed' % (len(shapes),shape_flush_pt_counter))
+                shape_flush_pt_counter-=100000
+
             shape = Shape(feed_id, shape_id)
             shapes[shape_id] = shape
+            shapes_db_q.append(shape)
+
         shape_point = ShapePoint(feed_id, shape_id, pt_seq, lat, lon, dist_traveled)
+        
         shape.points.append(shape_point)
-    dao.add_all(shapes.values())
-    dao.flush()
-    logger.info("Imported %d shapes with %d points" % (len(shapes), n_shape_pts))
     
+    dao.bulk_save_objects(shapes_db_q)
+    for sk in shapes:
+        dao.bulk_save_objects(shapes[sk].points)    
+    dao.flush()
+
+    logger.info("Imported %d shapes with %d points" % (len(shapes), n_shape_pts))
+
     logger.info("Importing trips...")
     n_trips = 0
+    trips_q = []
     trip_ids = set()
     for trip in gtfs.trips():
         trip['wheelchair_accessible'] = _toint(trip.get('wheelchair_accessible'), Trip.WHEELCHAIR_UNKNOWN)
@@ -446,14 +469,24 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
             else:
                 raise KeyError("Route ID '%s' in trip '%s' is invalid." % (route_id, trip))
         trip2 = Trip(feed_id, frequency_generated=False, **trip)
-        dao.add(trip2)
+        
+        trips_q.append(trip2)
+        if n_trips % 1000 == 0:
+            dao.bulk_save_objects(trips_q)
+            dao.flush()
+            logger.info('%s trips saved. Total %s trips' % (len(trips_q),n_trips))
+            trips_q = []
+
         trip_ids.add(trip.get('trip_id'))
         n_trips += 1
+    dao.bulk_save_objects(trips_q)
     dao.flush()
+    
     logger.info("Imported %d trips" % n_trips)
 
     logger.info("Importing stop times...")
     n_stoptimes = 0
+    stoptimes_q = []
     for stoptime in gtfs.stop_times():
         stopseq = _toint(stoptime.get('stop_sequence'))
         # Mark times to interpolate later on 
@@ -486,14 +519,23 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
                 shape_dist_traveled=shpdist, interpolated=interp,
                 pickup_type=pkptype, drop_off_type=drptype,
                 stop_headsign=stoptime.get('stop_headsign'))
-        dao.add(stoptime2)
+        #dao.add(stoptime2)
+        stoptimes_q.append(stoptime2)
         n_stoptimes += 1
         # Commit every now and then
-        if n_stoptimes % 10000 == 0:
+        if n_stoptimes % 50000 == 0:
+            dao.bulk_save_objects(stoptimes_q)
             logger.info("%d stop times" % n_stoptimes)
             dao.flush()
+            stoptimes_q = []
+    dao.bulk_save_objects(stoptimes_q)
     dao.flush()
+
     logger.info("Imported %d stop times" % n_stoptimes)
+    logger.info("Committing")
+    dao.flush()
+    dao.commit()
+    logger.info("Commit done")
 
     logger.info("Normalizing shapes...")
     nshapes = 0
@@ -563,7 +605,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
                     stti.departure_time = last_stoptime_with_time.departure_time
 
         ntrips += 1
-        if ntrips % 1000 == 0:
+        if ntrips % 100 == 0:
             logger.info("%d trips" % ntrips)
             dao.flush()
     dao.flush()
@@ -629,6 +671,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         # This also delete the associated stop times
         dao.delete(trip)
     dao.flush()
+    dao.commit()
     logger.info("Expanded %d frequencies to %d trips." % (n_freq, n_exp_trips))
 
     logger.info("Feed '%s': import done." % feed_id)
