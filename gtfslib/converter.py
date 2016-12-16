@@ -428,15 +428,14 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
                         shapes[sk].points[:] = []
                 shapes_db_q = []
                 dao.flush()
-                logger.info('%s shapes and %s points inserted and flushed' % (len(shapes),shape_flush_pt_counter))
-                shape_flush_pt_counter-=100000
+                logger.info('%s shapes and %s points inserted' % (len(shapes), shape_flush_pt_counter))
+                shape_flush_pt_counter -= 100000
 
             shape = Shape(feed_id, shape_id)
             shapes[shape_id] = shape
             shapes_db_q.append(shape)
 
         shape_point = ShapePoint(feed_id, shape_id, pt_seq, lat, lon, dist_traveled)
-        
         shape.points.append(shape_point)
     
     dao.bulk_save_objects(shapes_db_q)
@@ -470,14 +469,14 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         trip2 = Trip(feed_id, frequency_generated=False, **trip)
         
         trips_q.append(trip2)
-        if n_trips % 1000 == 0:
+        n_trips += 1
+        if n_trips % 10000 == 0:
             dao.bulk_save_objects(trips_q)
             dao.flush()
-            logger.info('%s trips saved. Total %s trips' % (len(trips_q),n_trips))
+            logger.info('%s trips' % n_trips)
             trips_q = []
 
         trip_ids.add(trip.get('trip_id'))
-        n_trips += 1
     dao.bulk_save_objects(trips_q)
     dao.flush()
     
@@ -527,7 +526,6 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
             dao.flush()
             stoptimes_q = []
     dao.bulk_save_objects(stoptimes_q)
-    dao.flush()
 
     logger.info("Imported %d stop times" % n_stoptimes)
     logger.info("Committing")
