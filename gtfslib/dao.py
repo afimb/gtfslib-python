@@ -72,10 +72,10 @@ class Dao(object):
     def delete_feed(self, feed_id):
         self._session.query(FareRule).filter(FareRule.feed_id == feed_id).delete(synchronize_session=False)
         self._session.query(FareAttribute).filter(FareAttribute.feed_id == feed_id).delete(synchronize_session=False)
-        self._session.query(ShapePoint).filter(ShapePoint.feed_id == feed_id).delete(synchronize_session=False)
-        self._session.query(Shape).filter(Shape.feed_id == feed_id).delete(synchronize_session=False)
         self._session.query(StopTime).filter(StopTime.feed_id == feed_id).delete(synchronize_session=False)
         self._session.query(Trip).filter(Trip.feed_id == feed_id).delete(synchronize_session=False)
+        self._session.query(ShapePoint).filter(ShapePoint.feed_id == feed_id).delete(synchronize_session=False)
+        self._session.query(Shape).filter(Shape.feed_id == feed_id).delete(synchronize_session=False)
         self._session.query(CalendarDate).filter(CalendarDate.feed_id == feed_id).delete(synchronize_session=False)
         self._session.query(Calendar).filter(Calendar.feed_id == feed_id).delete(synchronize_session=False)
         self._session.query(Route).filter(Route.feed_id == feed_id).delete(synchronize_session=False)
