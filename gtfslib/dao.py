@@ -60,6 +60,9 @@ class Dao(object):
     def session(self):
         return self._session
 
+    def bulk_save_objects(self,objects):
+        return self._session.bulk_save_objects(objects)
+        
     def add(self, obj):
         self._session.add(obj)
         
