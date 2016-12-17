@@ -28,9 +28,6 @@ logger = logging.getLogger('libgtfs')
 
 DOW_NAMES = { 0: 'monday', 1: 'tuesday', 2: 'wednesday', 3: 'thursday', 4: 'friday', 5: 'saturday', 6: 'sunday' }
 
-# TODO Enable this when we have a cache
-ENABLE_SHAPE_DISTANCE = True
-
 def _toint(s, default_value=None):
     if s is None or len(s) == 0:
         if default_value is None:
@@ -171,24 +168,28 @@ class _OdometerShape(object):
         logger.debug("Shape %s: Cache hit: %d, misses: %d" % (self._shape.shape_id, self._cache_hit, self._cache_miss))
 
 class _Odometer(object):
-    _shapes = {}
-    _dcache = DistanceCache()
+    _odoshp = None
+    _dcache = None
 
     def normalize_and_register_shape(self, shape):
-        self._shapes[shape.shape_id] = _OdometerShape(shape)
+        self._odoshp = _OdometerShape(shape)
+        self.reset()
 
-    def reset(self, shape_id):
+    def register_noshape(self):
+        self._odoshp = None
+        self.reset()
+
+    def reset(self):
+        if self._odoshp is not None:
+            self._odoshp.reset()
         self._distance = 0
         self._last_stop = None
-        odoshp = self._shapes.get(shape_id, None)
-        if odoshp is not None:
-            odoshp.reset()
+        self._dcache = DistanceCache()
 
-    def dist_traveled(self, shape_id, stop, old_dist_traveled):
-        odoshp = self._shapes.get(shape_id, None)
-        if odoshp is not None and ENABLE_SHAPE_DISTANCE:
+    def dist_traveled(self, stop, old_dist_traveled):
+        if self._odoshp is not None:
             # We have a shape, use it
-            return odoshp.dist_traveled(stop, old_dist_traveled)
+            return self._odoshp.dist_traveled(stop, old_dist_traveled)
         # We do not have shape, use straight-line distance between
         # consecutive stops
         if self._last_stop is not None:
@@ -197,8 +198,7 @@ class _Odometer(object):
         return self._distance
 
     def _debug_cache(self):
-        for odoshp in self._shapes.values():
-            odoshp._debug_cache()
+        self._odoshp._debug_cache()
 
 @timing
 def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
@@ -250,7 +250,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
             dao.add(zone)
         stop['location_type'] = _toint(stop.get('location_type'), Stop.TYPE_STOP)
         if stop['location_type'] != stoptype:
-            return
+            return 0
         stop['wheelchair_boarding'] = _toint(stop.get('wheelchair_boarding'), Stop.WHEELCHAIR_UNKNOWN)
         lat = _tofloat(stop.get('stop_lat'), None)
         lon = _tofloat(stop.get('stop_lon'), None)
@@ -278,6 +278,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         stop2 = Stop(feed_id, **stop)
         dao.add(stop2)
         item_ids.add(stop2.stop_id)
+        return 1
 
     stop_ids = set()
     station_ids = set()
@@ -285,11 +286,9 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     logger.info("Importing zones, stations and stops...")
     n_stations = n_stops = 0
     for station in gtfs.stops():
-        import_stop(station, Stop.TYPE_STATION, zone_ids, station_ids)
-        n_stations += 1
+        n_stations += import_stop(station, Stop.TYPE_STATION, zone_ids, station_ids)
     for stop in gtfs.stops():
-        import_stop(stop, Stop.TYPE_STOP, zone_ids, stop_ids, station_ids)
-        n_stops += 1
+        n_stops += import_stop(stop, Stop.TYPE_STOP, zone_ids, stop_ids, station_ids)
     dao.flush()
     logger.info("Imported %d zones, %d stations and %d stops" % (len(zone_ids), n_stations, n_stops))
 
@@ -403,30 +402,34 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
 
     logger.info("Importing shapes...")
     n_shape_pts = 0
-    shapes = {}
+    shape_ids = set()
+    shapepts_q = []
     for shpt in gtfs.shapes():
         shape_id = shpt.get('shape_id')
+        if shape_id not in shape_ids:
+            dao.add(Shape(feed_id, shape_id))
+            dao.flush()
+            shape_ids.add(shape_id)
         pt_seq = _toint(shpt.get('shape_pt_sequence'))
         # This field is optional
         dist_traveled = _tofloat(shpt.get('shape_dist_traveled'), -999999)
         lat = _tofloat(shpt.get('shape_pt_lat'))
         lon = _tofloat(shpt.get('shape_pt_lon'))
-        n_shape_pts += 1
-        if n_shape_pts % 10000 == 0:
-            logger.info("%d shape points" % n_shape_pts)
-            dao.flush()
-        shape = shapes.get(shape_id)
-        if shape is None:
-            shape = Shape(feed_id, shape_id)
-            shapes[shape_id] = shape
         shape_point = ShapePoint(feed_id, shape_id, pt_seq, lat, lon, dist_traveled)
-        shape.points.append(shape_point)
-    dao.add_all(shapes.values())
+        shapepts_q.append(shape_point)
+        n_shape_pts += 1
+        if n_shape_pts % 100000 == 0:
+            logger.info("%d shape points" % n_shape_pts)
+            dao.bulk_save_objects(shapepts_q)
+            dao.flush()
+            shapepts_q = []
+    dao.bulk_save_objects(shapepts_q)
     dao.flush()
-    logger.info("Imported %d shapes with %d points" % (len(shapes), n_shape_pts))
-    
+    logger.info("Imported %d shapes and %d points" % (len(shape_ids), n_shape_pts))
+
     logger.info("Importing trips...")
     n_trips = 0
+    trips_q = []
     trip_ids = set()
     for trip in gtfs.trips():
         trip['wheelchair_accessible'] = _toint(trip.get('wheelchair_accessible'), Trip.WHEELCHAIR_UNKNOWN)
@@ -446,14 +449,24 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
             else:
                 raise KeyError("Route ID '%s' in trip '%s' is invalid." % (route_id, trip))
         trip2 = Trip(feed_id, frequency_generated=False, **trip)
-        dao.add(trip2)
-        trip_ids.add(trip.get('trip_id'))
+        
+        trips_q.append(trip2)
         n_trips += 1
+        if n_trips % 10000 == 0:
+            dao.bulk_save_objects(trips_q)
+            dao.flush()
+            logger.info('%s trips' % n_trips)
+            trips_q = []
+
+        trip_ids.add(trip.get('trip_id'))
+    dao.bulk_save_objects(trips_q)
     dao.flush()
+    
     logger.info("Imported %d trips" % n_trips)
 
     logger.info("Importing stop times...")
     n_stoptimes = 0
+    stoptimes_q = []
     for stoptime in gtfs.stop_times():
         stopseq = _toint(stoptime.get('stop_sequence'))
         # Mark times to interpolate later on 
@@ -486,40 +499,34 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
                 shape_dist_traveled=shpdist, interpolated=interp,
                 pickup_type=pkptype, drop_off_type=drptype,
                 stop_headsign=stoptime.get('stop_headsign'))
-        dao.add(stoptime2)
+        stoptimes_q.append(stoptime2)
         n_stoptimes += 1
         # Commit every now and then
-        if n_stoptimes % 10000 == 0:
+        if n_stoptimes % 50000 == 0:
             logger.info("%d stop times" % n_stoptimes)
+            dao.bulk_save_objects(stoptimes_q)
             dao.flush()
-    dao.flush()
+            stoptimes_q = []
+    dao.bulk_save_objects(stoptimes_q)
+
     logger.info("Imported %d stop times" % n_stoptimes)
-
-    logger.info("Normalizing shapes...")
-    nshapes = 0
-    odometer = _Odometer()
-    for shape in dao.shapes(fltr=Shape.feed_id == feed_id, prefetch_points=True):
-        # Shape will be registered in the normalize
-        odometer.normalize_and_register_shape(shape)
-        nshapes += 1
-        if nshapes % 100 == 0:
-            logger.info("%d shapes" % nshapes)
-            dao.flush()
+    logger.info("Committing")
     dao.flush()
-    logger.info("Normalized %d shapes" % len(shapes))
+    # TODO Add option to enable/disable this commit
+    # to ensure import is transactionnal
+    dao.commit()
+    logger.info("Commit done")
 
-    logger.info("Normalizing trips...")
-    ntrips = 0
-    # Process trips and stop times by 1k trips at a time
-    for trip in dao.trips(fltr=(Trip.feed_id == feed_id), prefetch_stop_times=True, prefetch_stops=True, batch_size=800):
+    logger.info("Normalizing shapes and trips...")
+    def normalize_trip(trip, odometer):
         stopseq = 0
         n_stoptimes = len(trip.stop_times)
         last_stoptime_with_time = None
         to_interpolate = []
-        odometer.reset(trip.shape_id)
+        odometer.reset()
         for stoptime in trip.stop_times:
             stoptime.stop_sequence = stopseq
-            stoptime.shape_dist_traveled = odometer.dist_traveled(trip.shape_id, stoptime.stop,
+            stoptime.shape_dist_traveled = odometer.dist_traveled(stoptime.stop,
                         stoptime.shape_dist_traveled if stoptime.shape_dist_traveled != -999999 else None)
             if stopseq == 0:
                 # Force first arrival time to NULL
@@ -549,7 +556,6 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
                 to_interpolate = []
                 last_stoptime_with_time = stoptime
             stopseq += 1
-
         if len(to_interpolate) > 0:
             # Should not happen, but handle the case, we never know
             if last_stoptime_with_time is None:
@@ -562,13 +568,31 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
                     stti.arrival_time = last_stoptime_with_time.departure_time
                     stti.departure_time = last_stoptime_with_time.departure_time
 
+    nshapes = 0
+    ntrips = 0
+    odometer = _Odometer()
+    # Process shapes and associated trips
+    for shape in dao.shapes(fltr=Shape.feed_id == feed_id, prefetch_points=True, batch_size=50):
+        # Shape will be registered in the normalize
+        odometer.normalize_and_register_shape(shape)
+        for trip in dao.trips(fltr=(Trip.feed_id == feed_id) & (Trip.shape_id == shape.shape_id), prefetch_stop_times=True, prefetch_stops=True, batch_size=800):
+            normalize_trip(trip, odometer)
+            ntrips += 1
+            if ntrips % 1000 == 0:
+                logger.info("%d trips, %d shapes" % (ntrips, nshapes))
+                dao.flush()
+        nshapes += 1
+        #odometer._debug_cache()
+    # Process trips w/o shapes
+    for trip in dao.trips(fltr=(Trip.feed_id == feed_id) & (Trip.shape_id == None), prefetch_stop_times=True, prefetch_stops=True, batch_size=800):
+        odometer.register_noshape()
+        normalize_trip(trip, odometer)
         ntrips += 1
         if ntrips % 1000 == 0:
             logger.info("%d trips" % ntrips)
             dao.flush()
     dao.flush()
-    logger.info("Normalized %d trips" % ntrips)
-    # odometer._debug_cache()
+    logger.info("Normalized %d trips and %d shapes" % (ntrips, nshapes))
 
     # Note: we expand frequencies *after* normalization
     # for performances purpose only: that minimize the
@@ -629,6 +653,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         # This also delete the associated stop times
         dao.delete(trip)
     dao.flush()
+    dao.commit()
     logger.info("Expanded %d frequencies to %d trips." % (n_freq, n_exp_trips))
 
     logger.info("Feed '%s': import done." % feed_id)

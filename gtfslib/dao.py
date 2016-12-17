@@ -60,6 +60,9 @@ class Dao(object):
     def session(self):
         return self._session
 
+    def bulk_save_objects(self,objects):
+        return self._session.bulk_save_objects(objects)
+        
     def add(self, obj):
         self._session.add(obj)
         
@@ -315,14 +318,19 @@ class Dao(object):
             query = query.options(subqueryload('points'))
         return query.get((feed_id, shape_id))
 
-    def shapes(self, fltr=None, prefetch_points=True):
-        query = self._session.query(Shape).distinct()
+    def shapes(self, fltr=None, prefetch_points=True, batch_size=100):
+        idquery = self._session.query(Shape.feed_id, Shape.shape_id).distinct()
         if fltr is not None:
-            query = _AutoJoiner(self._orm, query, fltr).autojoin()
-            query = query.filter(fltr)
-        if prefetch_points:
-            query = query.options(subqueryload('points'))
-        return query.all()
+            idquery = _AutoJoiner(self._orm, idquery, fltr).autojoin()
+            idquery = idquery.filter(fltr)
+        # Only query IDs first
+        shapeids = idquery.all()
+        def query_factory():
+            query = self._session.query(Shape)
+            if prefetch_points:
+                query = query.options(subqueryload('points'))
+            return query
+        return self._page_query(query_factory, Shape.feed_id, Shape.shape_id, shapeids, batch_size)
 
     def fare_attribute(self, fare_id, feed_id="", prefetch_fare_rules=True):
         query = self._session.query(FareAttribute)
