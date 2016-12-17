@@ -408,6 +408,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
         shape_id = shpt.get('shape_id')
         if shape_id not in shape_ids:
             dao.add(Shape(feed_id, shape_id))
+            dao.flush()
             shape_ids.add(shape_id)
         pt_seq = _toint(shpt.get('shape_pt_sequence'))
         # This field is optional
@@ -578,7 +579,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
             normalize_trip(trip, odometer)
             ntrips += 1
             if ntrips % 1000 == 0:
-                logger.info("%d trips" % ntrips)
+                logger.info("%d trips, %d shapes" % (ntrips, nshapes))
                 dao.flush()
         nshapes += 1
         #odometer._debug_cache()
@@ -591,7 +592,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
             logger.info("%d trips" % ntrips)
             dao.flush()
     dao.flush()
-    logger.info("Normalized %d shapes and %d trips" % (nshapes, ntrips))
+    logger.info("Normalized %d trips and %d shapes" % (ntrips, nshapes))
 
     # Note: we expand frequencies *after* normalization
     # for performances purpose only: that minimize the
