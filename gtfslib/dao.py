@@ -81,6 +81,7 @@ class Dao(object):
         self._session.query(Route).filter(Route.feed_id == feed_id).delete(synchronize_session=False)
         self._session.query(Stop).filter(Stop.feed_id == feed_id).delete(synchronize_session=False)
         self._session.query(Agency).filter(Agency.feed_id == feed_id).delete(synchronize_session=False)
+        self._session.query(Zone).filter(Zone.feed_id == feed_id).delete(synchronize_session=False)
         self._session.query(FeedInfo).filter(FeedInfo.feed_id == feed_id).delete()
 
     def commit(self):
