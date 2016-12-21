@@ -17,8 +17,9 @@
 """gtfsdbloader - GTFS to GTFS' conversion tool and database loader
 
 Usage:
-  gtfsdbloader <database> (--load=<gtfs> | --delete | --list) [--id=<id>] \
-                          [--logsql] [--lenient] [--schema=<schema>]
+  gtfsdbloader <database> (--load=<gtfs> | --delete | --list) [--id=<id>]
+                        [--logsql] [--lenient] [--schema=<schema>]
+                        [--disablenormalize]
   gtfsdbloader (-h | --help)
   gtfsdbloader --version
 
@@ -34,6 +35,7 @@ Options:
   --logsql             Enable SQL logging (very verbose)
   --lenient            Allow some level of brokenness in GTFS input.
   --schema=<schema>    Set the schema to use (for PostgreSQL).
+  --disablenormalize   Disable shape and stop times normalization.
 
 Examples:
   gtfsdbloader db.sqlite --load=sncf.zip --id=sncf
@@ -68,7 +70,9 @@ def main():
     logger.setLevel(logging.INFO)
     logger.addHandler(StreamHandler(sys.stdout))
 
-    dao = Dao(arguments['<database>'], sql_logging=arguments['--logsql'], schema=arguments['--schema'])
+    dao = Dao(arguments['<database>'],
+              sql_logging=arguments['--logsql'],
+              schema=arguments['--schema'])
 
     if arguments['--list']:
         for feed in dao.feeds():
@@ -83,7 +87,10 @@ def main():
             dao.commit()
 
     if arguments['--load']:
-        dao.load_gtfs(arguments['--load'], feed_id=arguments['--id'], lenient=arguments['--lenient'])
+        dao.load_gtfs(arguments['--load'],
+                      feed_id=arguments['--id'],
+                      lenient=arguments['--lenient'],
+                      disable_normalization=arguments['--disablenormalize'])
 
 if __name__ == '__main__':
     main()

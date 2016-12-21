@@ -375,11 +375,11 @@ class Dao(object):
             for item in batch:
                 yield item
 
-    def load_gtfs(self, filename, feed_id="", lenient=False, **kwargs):
+    def load_gtfs(self, filename, feed_id="", lenient=False, disable_normalization=False, **kwargs):
         @transactional(self.session())
         def _do_load_gtfs():
             with Gtfs(ZipFileSource(filename)).load() as gtfs:
-                _convert_gtfs_model(feed_id, gtfs, self, lenient, **kwargs)
+                _convert_gtfs_model(feed_id, gtfs, self, lenient, disable_normalization, **kwargs)
         _do_load_gtfs()
 
 class _AutoJoiner(object):

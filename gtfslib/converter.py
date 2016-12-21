@@ -201,7 +201,7 @@ class _Odometer(object):
         self._odoshp._debug_cache()
 
 @timing
-def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
+def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False, disable_normalization=False):
     
     feedinfo2 = None
     logger.info("Importing feed ID '%s'" % feed_id)
@@ -517,7 +517,6 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
     dao.commit()
     logger.info("Commit done")
 
-    logger.info("Normalizing shapes and trips...")
     def normalize_trip(trip, odometer):
         stopseq = 0
         n_stoptimes = len(trip.stop_times)
@@ -568,31 +567,35 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False):
                     stti.arrival_time = last_stoptime_with_time.departure_time
                     stti.departure_time = last_stoptime_with_time.departure_time
 
-    nshapes = 0
-    ntrips = 0
-    odometer = _Odometer()
-    # Process shapes and associated trips
-    for shape in dao.shapes(fltr=Shape.feed_id == feed_id, prefetch_points=True, batch_size=50):
-        # Shape will be registered in the normalize
-        odometer.normalize_and_register_shape(shape)
-        for trip in dao.trips(fltr=(Trip.feed_id == feed_id) & (Trip.shape_id == shape.shape_id), prefetch_stop_times=True, prefetch_stops=True, batch_size=800):
+    if disable_normalization:
+        logger.info("Skipping shapes and trips normalization")
+    else:
+        logger.info("Normalizing shapes and trips...")
+        nshapes = 0
+        ntrips = 0
+        odometer = _Odometer()
+        # Process shapes and associated trips
+        for shape in dao.shapes(fltr=Shape.feed_id == feed_id, prefetch_points=True, batch_size=50):
+            # Shape will be registered in the normalize
+            odometer.normalize_and_register_shape(shape)
+            for trip in dao.trips(fltr=(Trip.feed_id == feed_id) & (Trip.shape_id == shape.shape_id), prefetch_stop_times=True, prefetch_stops=True, batch_size=800):
+                normalize_trip(trip, odometer)
+                ntrips += 1
+                if ntrips % 1000 == 0:
+                    logger.info("%d trips, %d shapes" % (ntrips, nshapes))
+                    dao.flush()
+            nshapes += 1
+            #odometer._debug_cache()
+        # Process trips w/o shapes
+        for trip in dao.trips(fltr=(Trip.feed_id == feed_id) & (Trip.shape_id == None), prefetch_stop_times=True, prefetch_stops=True, batch_size=800):
+            odometer.register_noshape()
             normalize_trip(trip, odometer)
             ntrips += 1
             if ntrips % 1000 == 0:
-                logger.info("%d trips, %d shapes" % (ntrips, nshapes))
+                logger.info("%d trips" % ntrips)
                 dao.flush()
-        nshapes += 1
-        #odometer._debug_cache()
-    # Process trips w/o shapes
-    for trip in dao.trips(fltr=(Trip.feed_id == feed_id) & (Trip.shape_id == None), prefetch_stop_times=True, prefetch_stops=True, batch_size=800):
-        odometer.register_noshape()
-        normalize_trip(trip, odometer)
-        ntrips += 1
-        if ntrips % 1000 == 0:
-            logger.info("%d trips" % ntrips)
-            dao.flush()
-    dao.flush()
-    logger.info("Normalized %d trips and %d shapes" % (ntrips, nshapes))
+        dao.flush()
+        logger.info("Normalized %d trips and %d shapes" % (ntrips, nshapes))
 
     # Note: we expand frequencies *after* normalization
     # for performances purpose only: that minimize the
