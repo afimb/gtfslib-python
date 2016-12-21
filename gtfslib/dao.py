@@ -60,7 +60,7 @@ class Dao(object):
     def session(self):
         return self._session
 
-    def bulk_save_objects(self,objects):
+    def bulk_save_objects(self, objects):
         return self._session.bulk_save_objects(objects)
         
     def add(self, obj):
@@ -243,7 +243,7 @@ class Dao(object):
         if fltr is not None:
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
-        return [ date for (date, ) in query.all() ]
+        return [ date for (date,) in query.all() ]
 
     def trip(self, trip_id, feed_id="", prefetch_stop_times=True):
         query = self._session.query(Trip)
