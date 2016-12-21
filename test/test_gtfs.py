@@ -19,6 +19,8 @@
 
 import unittest
 
+from sqlalchemy.orm import clear_mappers
+
 from gtfslib.spatial import orthodromic_distance
 from gtfslib.dao import Dao
 
@@ -34,6 +36,7 @@ SQL_LOG = False
 class TestGtfs(unittest.TestCase):
 
     def _test_one_gtfs(self, gtfs):
+        clear_mappers()
         dao = Dao(DAO_URL, sql_logging=SQL_LOG)
         dao.load_gtfs(gtfs)
 

@@ -22,6 +22,7 @@ import unittest
 from _collections import defaultdict
 from sqlalchemy.sql.expression import or_
 from sqlalchemy.sql.functions import func
+from sqlalchemy.orm import clear_mappers
 
 from gtfslib.dao import Dao
 from gtfslib.model import CalendarDate, Stop, StopTime, Route
@@ -31,6 +32,10 @@ DUMMY_GTFS = "test/dummy.gtfs.zip"
 DAO_URL = ""
 
 class TestDemo(unittest.TestCase):
+
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        clear_mappers()
 
     def test_demo(self):
         dao = Dao(DAO_URL, sql_logging=False)

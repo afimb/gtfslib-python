@@ -20,12 +20,18 @@
 import re
 import unittest
 
+from sqlalchemy.orm import clear_mappers
+
 from gtfslib.dao import _AutoJoiner, Dao
 from gtfslib.model import CalendarDate, FeedInfo, Agency, Route, Calendar, Stop, \
     Trip, StopTime, Transfer, Shape, ShapePoint, Zone, FareAttribute, FareRule
 
 
 class TestAutoJoin(unittest.TestCase):
+
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        clear_mappers()
 
     def test_autojoin(self):
         dao = Dao()

@@ -20,7 +20,7 @@
 import unittest
 
 from gtfslib.dao import Dao
-
+from sqlalchemy.orm import clear_mappers
 
 # Location of broken.gtfs.zip.
 # This unit-test is highly dependent on the CONTENT of this GTFS.
@@ -31,12 +31,14 @@ class TestMiniGtfs(unittest.TestCase):
     def test_broken(self):
         exception = False
         try:
+            clear_mappers()
             dao = Dao("")
             dao.load_gtfs(BROKEN_GTFS, lenient=False)
         except KeyError:
             exception = True
         self.assertTrue(exception)
 
+        clear_mappers()
         dao = Dao("")
         dao.load_gtfs(BROKEN_GTFS, lenient=True)
 

@@ -13,19 +13,24 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with gtfslib-python.  If not, see <http://www.gnu.org/licenses/>.
-from gtfslib.spatial import RectangularArea
 """
 @author: Laurent GRÉGOIRE <laurent.gregoire@mecatran.com>
 """
 
 import unittest
 
+from gtfslib.spatial import RectangularArea
+from sqlalchemy.orm import clear_mappers
+
 from gtfslib.dao import Dao
 from gtfslib.model import CalendarDate, FeedInfo, Agency, Route, Calendar, Stop, \
     Trip, StopTime, Transfer, Shape, ShapePoint, Zone, FareAttribute, FareRule
 
-
 class TestDao(unittest.TestCase):
+
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        clear_mappers()
 
     def test_entities_creation(self):
         dao = Dao()

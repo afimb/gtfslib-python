@@ -19,6 +19,8 @@
 
 import unittest
 
+from sqlalchemy.orm import clear_mappers
+
 from gtfslib.model import Trip
 from gtfslib.dao import Dao
 
@@ -33,6 +35,10 @@ DAO_URL = ""
 SQL_LOG = False
 
 class TestMiniGtfs(unittest.TestCase):
+
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        clear_mappers()
 
     def test_gtfs_data(self):
         dao = Dao(DAO_URL, sql_logging=SQL_LOG)

@@ -24,6 +24,8 @@ import random
 import unittest
 import requests
 
+from sqlalchemy.orm import clear_mappers
+
 from gtfslib.dao import Dao
 
 # By default we do not enable this test, it takes ages
@@ -48,6 +50,10 @@ IDS_TO_LOAD = None
 # IDS_TO_LOAD = [ 'biaostocka-komunikacja-miejska' ]
 
 class TestAllGtfs(unittest.TestCase):
+
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        clear_mappers()
 
     # Downlaod all GTFS from GTFS data-exchange web-site
     # and load them into a DAO.

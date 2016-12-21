@@ -32,8 +32,6 @@ class _Orm(object):
 
     def __init__(self, engine, schema=None):
         self._metadata = MetaData(schema=schema)
-        # TODO This is hackish. How to check if we already have defined the mapping?
-        clear_mappers()
         self.mappers = []
 
         _feedinfo_id_column = Column('feed_id', String, primary_key=True)
