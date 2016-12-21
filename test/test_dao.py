@@ -115,10 +115,12 @@ class TestDao(unittest.TestCase):
         s2 = Stop("F1", "S2", "Stop 2", 45.1, 0.1)
         s3 = Stop("F1", "S3", "Stop 3", 45.2, 0.2)
         t1 = Trip("F1", "T1", "R1", "C1")
+        t1.direction_id = 0
         t11 = StopTime("F1", "T1", "S1", 0, 28800, 28800, 0.0)
         t12 = StopTime("F1", "T1", "S2", 1, 29400, 29400, 0.0)
         t13 = StopTime("F1", "T1", "S3", 2, 30000, 30000, 0.0)
         t2 = Trip("F1", "T2", "R1", "C1")
+        t2.direction_id = 1
         # Order is not important for now
         t2.stop_times.append(StopTime(None, None, "S1", 1, 31000, 31000, 0.0))
         t2.stop_times.append(StopTime(None, None, "S2", 0, 30600, 30600, 0.0))
@@ -154,6 +156,11 @@ class TestDao(unittest.TestCase):
             for stoptime1, stoptime2 in trip.hops():
                 self.assertTrue(stoptime1.trip == stoptime2.trip)
                 self.assertTrue(stoptime1.stop_sequence + 1 == stoptime2.stop_sequence)
+
+        trips = list(dao.trips(fltr=Trip.direction_id == 0))
+        self.assertTrue(len(trips) == 1)
+        trips = list(dao.trips(fltr=Trip.direction_id == 1))
+        self.assertTrue(len(trips) == 1)
 
     def test_stop_station(self):
         dao = Dao()
