@@ -35,7 +35,10 @@ Options:
   --logsql             Enable SQL logging (very verbose)
   --lenient            Allow some level of brokenness in GTFS input.
   --schema=<schema>    Set the schema to use (for PostgreSQL).
-  --disablenormalize   Disable shape and stop times normalization.
+  --disablenormalize   Disable shape and stop times normalization. Be careful
+                       if you use this option, as missing stop times will not
+                       be interpolated, and shape_dist_traveled will not be
+                       computed or converted to meters.
 
 Examples:
   gtfsdbloader db.sqlite --load=sncf.zip --id=sncf
