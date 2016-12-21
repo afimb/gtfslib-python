@@ -336,12 +336,18 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False, disable_normalization
     logger.info("Importing fares...")
     n_fares = 0
     for fare_attr in gtfs.fare_attributes():
-        fare_attr['price'] = _tofloat(fare_attr.get('price'))
-        fare_attr['payment_method'] = _toint(fare_attr.get('payment_method'))
-        fare_attr['transfers'] = _toint(fare_attr.get('transfers'))
+        fare_id = fare_attr.get('fare_id')
+        fare_price = _tofloat(fare_attr.get('price'))
+        currency_type = fare_attr.get('currency_type')
+        payment_method = _toint(fare_attr.get('payment_method'))
+        n_transfers = None
+        if fare_attr.get('transfers') is not None:
+            n_transfers = _toint(fare_attr.get('transfers'))
+        transfer_duration = None
         if fare_attr.get('transfer_duration') is not None:
-            fare_attr['transfer_duration'] = _toint(fare_attr.get('transfer_duration'))
-        fare = FareAttribute(feed_id, **fare_attr)
+            transfer_duration = _toint(fare_attr.get('transfer_duration'))
+        fare = FareAttribute(feed_id, fare_id, fare_price, currency_type,
+                             payment_method, n_transfers, transfer_duration)
         dao.add(fare)
         n_fares += 1
     dao.flush()
