@@ -290,15 +290,21 @@ class _Orm(object):
                                   primaryjoin=_feedinfo_id_column == foreign(_fareattr_feed_id_column))
         }))
 
-        _farerule_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
-        _farerule_id_column = Column('fare_id', String, primary_key=True)
-        _farerule_route_id_column = Column('route_id', String, primary_key=True, nullable=True)
-        _farerule_origin_id_column = Column('origin_id', String, primary_key=True, nullable=True)
-        _farerule_destination_id_column = Column('destination_id', String, primary_key=True, nullable=True)
-        _farerule_contains_id_column = Column('contains_id', String, primary_key=True, nullable=True)
+        _farerule_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'))
+        _farerule_id_column = Column('fare_id', String)
+        # Use a dummy autoincrement numerical field for primary key,
+        # as a primary key is mandatory, and the natural primary key
+        # for the model (feed_id, fare_id, route+zones ids) do have
+        # some fields that can be null.
+        _farerule_rule_id_column = Column('fare_rule_id', Integer, primary_key=True, autoincrement=True)
+        _farerule_route_id_column = Column('route_id', String, nullable=True)
+        _farerule_origin_id_column = Column('origin_id', String, nullable=True)
+        _farerule_destination_id_column = Column('destination_id', String, nullable=True)
+        _farerule_contains_id_column = Column('contains_id', String, nullable=True)
         _farerule_mapper = Table('fare_rules', self._metadata,
                     _farerule_feed_id_column,
                     _farerule_id_column,
+                    _farerule_rule_id_column,
                     _farerule_route_id_column,
                     _farerule_origin_id_column,
                     _farerule_destination_id_column,
